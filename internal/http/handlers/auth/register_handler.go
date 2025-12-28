@@ -2,30 +2,58 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
-	"highlightiq-server/internal/http/response"
+	resp "highlightiq-server/internal/http/response"
 	authreq "highlightiq-server/internal/requests/auth"
 	authsvc "highlightiq-server/internal/services/auth"
 )
 
-func Register(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req authreq.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusBadRequest, "invalid JSON body")
+		resp.JSON(w, http.StatusBadRequest, map[string]any{
+			"message": "invalid JSON payload",
+		})
 		return
 	}
 
-	if err := authreq.Validate.Struct(req); err != nil {
-		response.Error(w, http.StatusBadRequest, "validation failed")
+	if err := req.Validate(); err != nil {
+		// If it's our structured validation error, return it as a map
+		if verr, ok := err.(authreq.ValidationError); ok {
+			resp.JSON(w, http.StatusUnprocessableEntity, map[string]any{
+				"message": "validation error",
+				"errors":  verr,
+			})
+			return
+		}
+
+		resp.JSON(w, http.StatusUnprocessableEntity, map[string]any{
+			"message": "validation error",
+			"errors":  err.Error(),
+		})
 		return
 	}
 
-	result, status, errMsg := authsvc.Register(req.Name, req.Email)
-	if errMsg != "" {
-		response.Error(w, status, errMsg)
+	out, err := h.svc.Register(r.Context(), authsvc.RegisterInput{
+		Name:     req.Name,
+		Email:    req.Email,
+		Password: req.Password,
+	})
+	if err != nil {
+		if errors.Is(err, authsvc.ErrEmailTaken) {
+			resp.JSON(w, http.StatusConflict, map[string]any{
+				"message": "email already registered",
+			})
+			return
+		}
+
+		resp.JSON(w, http.StatusInternalServerError, map[string]any{
+			"message": "internal server error",
+		})
 		return
 	}
 
-	response.JSON(w, status, result)
+	resp.JSON(w, http.StatusCreated, out)
 }

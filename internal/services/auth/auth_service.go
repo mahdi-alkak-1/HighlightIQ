@@ -1,58 +1,93 @@
-package authsvc
+package auth
 
 import (
-	"encoding/json"
-	"os"
+	"context"
+	"errors"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
+
+	"highlightiq-server/internal/repos/users"
 )
 
-type UserDTO struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+type Service struct {
+	users     *users.Repo
+	jwtSecret []byte
+	tokenTTL  time.Duration
 }
 
-type RegisterResult struct {
-	User        UserDTO `json:"user"`
-	AccessToken string  `json:"access_token"`
-	TokenType   string  `json:"token_type"`
+func New(usersRepo *users.Repo, jwtSecret string) *Service {
+	return &Service{
+		users:     usersRepo,
+		jwtSecret: []byte(jwtSecret),
+		tokenTTL:  24 * time.Hour,
+	}
 }
 
-
-func Register(name, email string) (RegisterResult, int, string) {
-	userID := uuid.NewString()
-
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "dev-secret-change-me"
+func (s *Service) Register(ctx context.Context, in RegisterInput) (RegisterOutput, error) {
+	// 1) Check if email already exists (nice error instead of raw SQL error)
+	_, err := s.users.GetByEmail(ctx, in.Email)
+	if err == nil {
+		return RegisterOutput{}, ErrEmailTaken
+	}
+	if err != nil && !errors.Is(err, users.ErrNotFound) {
+		return RegisterOutput{}, err
 	}
 
-	claims := jwt.MapClaims{
-		"sub":   userID,
-		"email": email,
-		"exp":   time.Now().Add(15 * time.Minute).Unix(),
-		"iat":   time.Now().Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString([]byte(secret))
+	// 2) Hash password
+	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return RegisterResult{}, 500, "failed to sign token"
+		return RegisterOutput{}, err
 	}
 
-	return RegisterResult{
+	// 3) Insert user
+	u, err := s.users.Create(ctx, users.CreateParams{
+		UUID:         uuid.NewString(),
+		Name:         in.Name,
+		Email:        in.Email,
+		PasswordHash: string(hash),
+	})
+	if err != nil {
+		// in case of race condition (two requests same email)
+		if isDuplicateEmail(err) {
+			return RegisterOutput{}, ErrEmailTaken
+		}
+		return RegisterOutput{}, err
+	}
+
+	// 4) Issue JWT
+	token, err := s.signJWT(u.UUID, u.Email)
+	if err != nil {
+		return RegisterOutput{}, err
+	}
+
+	return RegisterOutput{
 		User: UserDTO{
-			ID:    userID,
-			Name:  name,
-			Email: email,
+			ID:    u.UUID,
+			Name:  u.Name,
+			Email: u.Email,
 		},
-		AccessToken: signed,
+		AccessToken: token,
 		TokenType:   "Bearer",
-	}, 201, ""
+	}, nil
 }
 
-// Marshal helper (optional) used by handlers
-func Marshal(v any) ([]byte, error) { return json.Marshal(v) }
+func isDuplicateEmail(err error) bool {
+	var me *mysql.MySQLError
+	return errors.As(err, &me) && me.Number == 1062
+}
+
+func (s *Service) signJWT(userUUID, email string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub":   userUUID,
+		"email": email,
+		"iat":   time.Now().Unix(),
+		"exp":   time.Now().Add(s.tokenTTL).Unix(),
+	}
+
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return t.SignedString(s.jwtSecret)
+}
