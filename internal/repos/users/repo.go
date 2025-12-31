@@ -61,3 +61,25 @@ func (r *Repo) Create(ctx context.Context, p CreateParams) (User, error) {
 		PasswordHash: p.PasswordHash,
 	}, nil
 }
+
+func (r *Repo) GetByUUID(ctx context.Context, userUUID string) (User, error) {
+	const q = `
+		SELECT id, uuid, name, email, password_hash
+		FROM users
+		WHERE uuid = ?
+		LIMIT 1
+	`
+
+	var u User
+	err := r.db.QueryRowContext(ctx, q, userUUID).Scan(
+		&u.ID, &u.UUID, &u.Name, &u.Email, &u.PasswordHash,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return User{}, ErrNotFound
+	}
+	if err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
