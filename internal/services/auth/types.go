@@ -3,8 +3,8 @@ package auth
 import "errors"
 
 var (
-	ErrEmailTaken = errors.New("auth: email already registered")
-	ErrInvalidCredentials  = errors.New("auth: invalid credentials")
+	ErrEmailTaken         = errors.New("auth: email already registered")
+	ErrInvalidCredentials = errors.New("auth: invalid credentials")
 )
 
 // RegisterInput is what the service needs (already validated by the request layer).

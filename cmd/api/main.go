@@ -6,10 +6,17 @@ import (
 
 	"highlightiq-server/internal/config"
 	"highlightiq-server/internal/db"
+
 	authhandlers "highlightiq-server/internal/http/handlers/auth"
+	recordinghandlers "highlightiq-server/internal/http/handlers/recordings"
+	"highlightiq-server/internal/http/middleware"
 	"highlightiq-server/internal/http/router"
+
+	recordingrepo "highlightiq-server/internal/repos/recordings"
 	"highlightiq-server/internal/repos/users"
+
 	authsvc "highlightiq-server/internal/services/auth"
+	recordingsvc "highlightiq-server/internal/services/recordings"
 )
 
 func main() {
@@ -21,11 +28,23 @@ func main() {
 	}
 	defer conn.Close()
 
+	// repos
 	usersRepo := users.New(conn)
-	authService := authsvc.New(usersRepo, cfg.JWTSecret)
-	authHandler := authhandlers.New(authService)
+	recRepo := recordingrepo.New(conn)
 
-	r := router.New(authHandler)
+	// services
+	authService := authsvc.New(usersRepo, cfg.JWTSecret)
+	recService := recordingsvc.New(recRepo, cfg.RecordingsDir)
+
+	// handlers
+	authHandler := authhandlers.New(authService)
+	recHandler := recordinghandlers.New(recService)
+
+	// middleware
+	jwtAuth := middleware.NewJWTAuth(usersRepo, cfg.JWTSecret)
+
+	// router
+	r := router.New(authHandler, recHandler, jwtAuth.Middleware)
 
 	log.Println("API listening on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
