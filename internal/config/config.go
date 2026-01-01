@@ -12,8 +12,9 @@ type MySQLConfig struct {
 }
 
 type Config struct {
-	MySQL MySQLConfig
-	JWTSecret string
+	MySQL         MySQLConfig
+	JWTSecret     string
+	RecordingsDir string
 }
 
 // Load reads configuration from environment variables with sane defaults.
@@ -26,7 +27,8 @@ func Load() Config {
 			User: getenv("DB_USER", "highlightiq"),
 			Pass: getenv("DB_PASS", "highlightiq_pass"),
 		},
-		JWTSecret: getenv("JWT_SECRET", "dev-secret-change-me"),
+		JWTSecret:     getenv("JWT_SECRET", "dev-secret-change-me"),
+		RecordingsDir: getenv("RECORDINGS_DIR", "D:\\recordings"),
 	}
 }
 
