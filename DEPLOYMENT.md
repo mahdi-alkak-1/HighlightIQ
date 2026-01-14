@@ -11,6 +11,7 @@
 - Recordings: `/var/lib/highlightiq/recordings`
 - Clips: `/var/lib/highlightiq/clips`
 - Environment file: `highlightiq.env` (DB, JWT, paths)
+- N8N webhook values are stored in `highlightiq.env`
 - App directory (deploy target): `/home/ubuntu/HighlightIQ`
 
 ## Database
@@ -44,3 +45,11 @@ Workflow: `.github/workflows/cd.yml`
 1. Push to `main`.
 2. CI runs tests and builds.
 3. CD connects to EC2, pulls the repo, rebuilds, and restarts services.
+
+## N8N backend trigger
+When a clip export succeeds, the API can call an n8n webhook (if configured).
+
+Required env vars in `highlightiq.env`:
+- `N8N_PUBLISH_WEBHOOK_URL` (n8n webhook URL)
+- `N8N_PUBLISH_WEBHOOK_AUTH` (value sent as `Authorization` header)
+- `CLIPS_BASE_URL` (public base URL for clips, e.g. `http://51.44.15.133/clips`)

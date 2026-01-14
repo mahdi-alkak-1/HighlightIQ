@@ -81,6 +81,7 @@ func New(
 						r3.Patch("/", clipsHandler.Update)
 						r3.Delete("/", clipsHandler.Delete)
 						r3.Post("/export", clipsHandler.Export)
+						r3.Get("/download", clipsHandler.Download)
 
 						if youtubePublishesHandler != nil {
 							r3.Route("/youtube-publishes", func(yr chi.Router) {

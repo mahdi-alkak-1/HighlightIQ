@@ -17,6 +17,7 @@ import (
 	"highlightiq-server/internal/http/router"
 
 	"highlightiq-server/internal/integrations/clipper"
+	"highlightiq-server/internal/integrations/n8n"
 
 	clipcandidatesrepo "highlightiq-server/internal/repos/clipcandidates"
 	clipsrepo "highlightiq-server/internal/repos/clips"
@@ -58,7 +59,13 @@ func main() {
 	if clipsDir == "" {
 		clipsDir = "/var/lib/highlightiq/clips"
 	}
-	clipsService := clipssvc.New(clipsRepo, recRepo, clipsDir)
+
+	var publishNotifier clipssvc.PublishNotifier
+	if cfg.N8NPublishWebhookURL != "" {
+		publishNotifier = n8n.New(cfg.N8NPublishWebhookURL, cfg.N8NPublishWebhookAuth)
+	}
+
+	clipsService := clipssvc.New(clipsRepo, recRepo, clipsDir, cfg.ClipsBaseURL, publishNotifier)
 	youtubePublishesService := ypsvc.New(clipsRepo, ypRepo)
 
 	// handlers
