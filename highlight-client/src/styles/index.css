@@ -1,0 +1,40 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Space Grotesk", ui-sans-serif, system-ui;
+  background: #111318;
+  color: #ffffff;
+}
+
+input, button {
+  font-family: inherit;
+}
+
+.auth-hero-gradient {
+  background: radial-gradient(circle at 15% 20%, rgba(28, 47, 255, 0.15), transparent 45%),
+    radial-gradient(circle at 70% 20%, rgba(37, 123, 255, 0.2), transparent 55%),
+    linear-gradient(135deg, #0d1118 0%, #111318 50%, #10131a 100%);
+}
+
+.auth-image-frame {
+  background: linear-gradient(180deg, rgba(16, 24, 40, 0.9) 0%, rgba(12, 18, 32, 0.95) 100%);
+  border: 1px solid rgba(65, 85, 120, 0.35);
+  box-shadow: 0 35px 80px rgba(0, 0, 0, 0.45);
+}
+
+.auth-image-glow {
+  box-shadow: 0 0 55px rgba(28, 47, 255, 0.25);
+}
