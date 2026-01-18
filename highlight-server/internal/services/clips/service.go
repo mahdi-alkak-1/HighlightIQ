@@ -135,6 +135,7 @@ type UpdateInput struct {
 	StartMS *int
 	EndMS   *int
 	Status  *string
+	ThumbnailPath *string
 }
 
 func (s *Service) Update(ctx context.Context, userID int64, id int64, in UpdateInput) (clipsrepo.Clip, error) {
@@ -148,6 +149,7 @@ func (s *Service) Update(ctx context.Context, userID int64, id int64, in UpdateI
 		StartMS: in.StartMS,
 		EndMS:   in.EndMS,
 		Status:  in.Status,
+		ThumbnailPath: in.ThumbnailPath,
 	})
 	if err != nil {
 		if errors.Is(err, clipsrepo.ErrNotFound) {
@@ -183,6 +185,22 @@ func (s *Service) GetExport(ctx context.Context, userID int64, id int64) (string
 	}
 
 	return *c.ExportPath, filepath.Base(*c.ExportPath), nil
+}
+
+func (s *Service) GetThumbnail(ctx context.Context, userID int64, id int64) (string, string, error) {
+	c, err := s.clipsRepo.GetByIDForUser(ctx, userID, id)
+	if err != nil {
+		if errors.Is(err, clipsrepo.ErrNotFound) {
+			return "", "", ErrNotFound
+		}
+		return "", "", err
+	}
+
+	if c.ThumbnailPath == nil || *c.ThumbnailPath == "" {
+		return "", "", ErrNotReady
+	}
+
+	return *c.ThumbnailPath, filepath.Base(*c.ThumbnailPath), nil
 }
 
 // Export generates an mp4 file using ffmpeg and updates export_path + status.
@@ -222,6 +240,7 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 	}
 
 	outPath := filepath.Join(s.clipsDir, fmt.Sprintf("clip_%d.mp4", c.ID))
+	thumbPath := filepath.Join(s.clipsDir, fmt.Sprintf("clip_%d_thumb.jpg", c.ID))
 
 	startSec := float64(c.StartMS) / 1000.0
 	durSec := float64(c.EndMS-c.StartMS) / 1000.0
@@ -262,10 +281,19 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 		return clipsrepo.Clip{}, fmt.Errorf("ffmpeg failed: %s", msg)
 	}
 
+	if err := s.generateThumbnail(ctx, outPath, thumbPath, durSec); err != nil {
+		failed := "failed"
+		_, _ = s.clipsRepo.UpdateByIDForUser(ctx, userID, id, clipsrepo.UpdateParams{
+			Status: &failed,
+		})
+		return clipsrepo.Clip{}, err
+	}
+
 	ready := "ready"
 	updated, err := s.clipsRepo.UpdateByIDForUser(ctx, userID, id, clipsrepo.UpdateParams{
 		Status:     &ready,
 		ExportPath: &outPath,
+		ThumbnailPath: &thumbPath,
 	})
 	if err != nil {
 		return clipsrepo.Clip{}, err
@@ -291,4 +319,37 @@ func (s *Service) buildClipURL(exportPath *string) string {
 
 	base := strings.TrimRight(s.clipsBaseURL, "/")
 	return base + "/" + filepath.Base(*exportPath)
+}
+
+func (s *Service) generateThumbnail(ctx context.Context, inputPath string, outputPath string, durationSeconds float64) error {
+	captureSec := 5.0
+	if durationSeconds > 0 && durationSeconds < 5.0 {
+		captureSec = durationSeconds / 2.0
+		if captureSec < 1.0 {
+			captureSec = durationSeconds
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, s.ffmpegPath,
+		"-hide_banner",
+		"-loglevel", "error",
+		"-y",
+		"-ss", fmt.Sprintf("%.3f", captureSec),
+		"-i", inputPath,
+		"-frames:v", "1",
+		"-q:v", "2",
+		outputPath,
+	)
+	cmd.Env = os.Environ()
+
+	out, runErr := cmd.CombinedOutput()
+	if runErr != nil {
+		msg := strings.TrimSpace(string(out))
+		if msg == "" {
+			msg = runErr.Error()
+		}
+		return fmt.Errorf("thumbnail generation failed: %s", msg)
+	}
+
+	return nil
 }

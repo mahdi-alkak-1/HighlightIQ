@@ -28,12 +28,12 @@ func (r *Repo) Create(ctx context.Context, p CreateParams) (Clip, error) {
 	}
 
 	const q = `
-		INSERT INTO clips (user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO clips (user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path, thumbnail_path)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	res, err := r.db.ExecContext(ctx, q,
-		p.UserID, p.RecordingID, p.CandidateID, p.Title, p.Caption, p.StartMS, p.EndMS, durationSeconds, p.Status, p.ExportPath,
+		p.UserID, p.RecordingID, p.CandidateID, p.Title, p.Caption, p.StartMS, p.EndMS, durationSeconds, p.Status, p.ExportPath, p.ThumbnailPath,
 	)
 	if err != nil {
 		return Clip{}, err
@@ -49,7 +49,7 @@ func (r *Repo) Create(ctx context.Context, p CreateParams) (Clip, error) {
 
 func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Clip, error) {
 	const q = `
-		SELECT id, user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path, created_at, updated_at
+		SELECT id, user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path, thumbnail_path, created_at, updated_at
 		FROM clips
 		WHERE user_id = ? AND id = ?
 		LIMIT 1
@@ -59,10 +59,11 @@ func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Clip
 	var cand sql.NullInt64
 	var caption sql.NullString
 	var export sql.NullString
+	var thumbnail sql.NullString
 
 	err := r.db.QueryRowContext(ctx, q, userID, id).Scan(
 		&c.ID, &c.UserID, &c.RecordingID, &cand, &c.Title, &caption, &c.StartMS, &c.EndMS, &c.DurationSeconds,
-		&c.Status, &export, &c.CreatedAt, &c.UpdatedAt,
+		&c.Status, &export, &thumbnail, &c.CreatedAt, &c.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Clip{}, ErrNotFound
@@ -83,13 +84,17 @@ func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Clip
 		v := export.String
 		c.ExportPath = &v
 	}
+	if thumbnail.Valid {
+		v := thumbnail.String
+		c.ThumbnailPath = &v
+	}
 
 	return c, nil
 }
 
 func (r *Repo) GetByID(ctx context.Context, id int64) (Clip, error) {
 	const q = `
-		SELECT id, user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path, created_at, updated_at
+		SELECT id, user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path, thumbnail_path, created_at, updated_at
 		FROM clips
 		WHERE id = ?
 		LIMIT 1
@@ -99,10 +104,11 @@ func (r *Repo) GetByID(ctx context.Context, id int64) (Clip, error) {
 	var cand sql.NullInt64
 	var caption sql.NullString
 	var export sql.NullString
+	var thumbnail sql.NullString
 
 	err := r.db.QueryRowContext(ctx, q, id).Scan(
 		&c.ID, &c.UserID, &c.RecordingID, &cand, &c.Title, &caption, &c.StartMS, &c.EndMS, &c.DurationSeconds,
-		&c.Status, &export, &c.CreatedAt, &c.UpdatedAt,
+		&c.Status, &export, &thumbnail, &c.CreatedAt, &c.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Clip{}, ErrNotFound
@@ -123,6 +129,10 @@ func (r *Repo) GetByID(ctx context.Context, id int64) (Clip, error) {
 		v := export.String
 		c.ExportPath = &v
 	}
+	if thumbnail.Valid {
+		v := thumbnail.String
+		c.ThumbnailPath = &v
+	}
 
 	return c, nil
 }
@@ -130,7 +140,7 @@ func (r *Repo) GetByID(ctx context.Context, id int64) (Clip, error) {
 func (r *Repo) ListByUser(ctx context.Context, userID int64, recordingID *int64) ([]Clip, error) {
 	var sb strings.Builder
 	sb.WriteString(`
-		SELECT id, user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path, created_at, updated_at
+		SELECT id, user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path, thumbnail_path, created_at, updated_at
 		FROM clips
 		WHERE user_id = ?
 	`)
@@ -155,10 +165,11 @@ func (r *Repo) ListByUser(ctx context.Context, userID int64, recordingID *int64)
 		var cand sql.NullInt64
 		var caption sql.NullString
 		var export sql.NullString
+		var thumbnail sql.NullString
 
 		if err := rows.Scan(
 			&c.ID, &c.UserID, &c.RecordingID, &cand, &c.Title, &caption, &c.StartMS, &c.EndMS, &c.DurationSeconds,
-			&c.Status, &export, &c.CreatedAt, &c.UpdatedAt,
+			&c.Status, &export, &thumbnail, &c.CreatedAt, &c.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -174,6 +185,10 @@ func (r *Repo) ListByUser(ctx context.Context, userID int64, recordingID *int64)
 		if export.Valid {
 			v := export.String
 			c.ExportPath = &v
+		}
+		if thumbnail.Valid {
+			v := thumbnail.String
+			c.ThumbnailPath = &v
 		}
 
 		out = append(out, c)
@@ -213,6 +228,10 @@ func (r *Repo) UpdateByIDForUser(ctx context.Context, userID int64, id int64, p 
 	if p.ExportPath != nil {
 		setParts = append(setParts, "export_path = ?")
 		args = append(args, *p.ExportPath)
+	}
+	if p.ThumbnailPath != nil {
+		setParts = append(setParts, "thumbnail_path = ?")
+		args = append(args, *p.ThumbnailPath)
 	}
 
 	if len(setParts) == 0 {
