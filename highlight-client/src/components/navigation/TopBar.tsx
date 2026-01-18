@@ -15,18 +15,19 @@ const TopBar = ({ range, onRangeChange }: TopBarProps) => {
         </p>
       </div>
       <div className="flex items-center gap-3">
-        <label className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-xs text-white/70">
+        <label className="flex items-center rounded-lg border border-brand-border bg-[#141821] px-3 py-2 text-xs text-white/70 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]">
           <select
-            className="bg-transparent text-xs text-white/80 focus:outline-none"
+            className="bg-transparent text-xs font-medium text-white outline-none"
             value={range}
             onChange={(event) => onRangeChange(event.target.value as DashboardRange)}
           >
-            <option value="last7">Last 7 Days</option>
-            <option value="today">Today</option>
+            <option className="bg-[#1B202A] text-white" value="last7">
+              Last 7 Days
+            </option>
+            <option className="bg-[#1B202A] text-white" value="today">
+              Today
+            </option>
           </select>
-          <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3">
-            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
         </label>
         <button className="rounded-lg bg-brand-blue px-4 py-2 text-xs font-semibold text-white">
           + Upload
