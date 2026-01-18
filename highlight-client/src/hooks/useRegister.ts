@@ -2,6 +2,7 @@ import { useState } from "react";
 import { registerUser } from "@/services/api/auth";
 import { AuthErrorMap, AuthResponse, RegisterPayload } from "@/types/auth";
 import { isApiError } from "@/types/api";
+import { setAuthSession } from "@/utils/authStorage";
 
 export const useRegister = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,6 +16,7 @@ export const useRegister = () => {
 
     try {
       const response = await registerUser(payload);
+      setAuthSession(response);
       return response;
     } catch (error) {
       if (isApiError(error)) {

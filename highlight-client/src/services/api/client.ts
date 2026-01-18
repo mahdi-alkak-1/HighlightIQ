@@ -1,4 +1,5 @@
 import { ApiError, ApiErrorData } from "@/types/api";
+import { getAuthToken } from "@/utils/authStorage";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ??
@@ -12,9 +13,11 @@ const buildError = (status: number, data?: ApiErrorData): ApiError => {
 };
 
 export const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options?.headers ?? {}),
     },
     ...options,

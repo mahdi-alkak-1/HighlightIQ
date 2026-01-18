@@ -10,6 +10,22 @@ export default defineConfig({
         target: "http://localhost:8080",
         changeOrigin: true,
       },
+      "/recordings": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/clips": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/clip-candidates": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/youtube-publishes": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
     },
   },
   resolve: {
