@@ -13,8 +13,10 @@ export interface StatCardData {
 }
 
 export interface PipelineStepData {
-  title: string;
+  id: string;
+  label: string;
   status: string;
+  count: number;
   state: "active" | "pending" | "complete" | "disabled";
 }
 
@@ -29,7 +31,6 @@ export interface UploadRecord {
 
 export interface DashboardData {
   stats: StatCardData[];
-  pipeline: PipelineStepData[];
   uploads: UploadRecord[];
 }
 

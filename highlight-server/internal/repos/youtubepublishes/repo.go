@@ -441,3 +441,59 @@ func (r *Repo) UpdateByVideoID(ctx context.Context, youtubeVideoID string, p Upd
 
 	return r.GetByVideoID(ctx, youtubeVideoID)
 }
+
+func (r *Repo) CountByUserAndStatus(ctx context.Context, userID int64, status string) (int64, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM youtube_publishes yp
+		JOIN clips c ON c.id = yp.clip_id
+		WHERE c.user_id = ? AND yp.status = ?
+	`
+	var count int64
+	if err := r.db.QueryRowContext(ctx, q, userID, status).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *Repo) CountSyncPendingByUser(ctx context.Context, userID int64) (int64, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM youtube_publishes yp
+		JOIN clips c ON c.id = yp.clip_id
+		WHERE c.user_id = ? AND yp.status = 'uploaded' AND yp.last_synced_at IS NULL
+	`
+	var count int64
+	if err := r.db.QueryRowContext(ctx, q, userID).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *Repo) CountByRecordingAndStatus(ctx context.Context, recordingID int64, status string) (int64, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM youtube_publishes yp
+		JOIN clips c ON c.id = yp.clip_id
+		WHERE c.recording_id = ? AND yp.status = ?
+	`
+	var count int64
+	if err := r.db.QueryRowContext(ctx, q, recordingID, status).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *Repo) CountSyncPendingByRecording(ctx context.Context, recordingID int64) (int64, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM youtube_publishes yp
+		JOIN clips c ON c.id = yp.clip_id
+		WHERE c.recording_id = ? AND yp.status = 'uploaded' AND yp.last_synced_at IS NULL
+	`
+	var count int64
+	if err := r.db.QueryRowContext(ctx, q, recordingID).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}

@@ -108,6 +108,37 @@ func (r *Repo) ListByUser(ctx context.Context, userID int64) ([]Recording, error
 	return out, nil
 }
 
+func (r *Repo) GetLatestByUser(ctx context.Context, userID int64) (Recording, error) {
+	const q = `
+		SELECT id, uuid, user_id, title, original_filename, storage_path, duration_seconds, status, created_at, updated_at
+		FROM recordings
+		WHERE user_id = ?
+		ORDER BY created_at DESC
+		LIMIT 1
+	`
+
+	var rec Recording
+	err := r.db.QueryRowContext(ctx, q, userID).Scan(
+		&rec.ID,
+		&rec.UUID,
+		&rec.UserID,
+		&rec.Title,
+		&rec.OriginalName,
+		&rec.StoragePath,
+		&rec.DurationSeconds,
+		&rec.Status,
+		&rec.CreatedAt,
+		&rec.UpdatedAt,
+	)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Recording{}, ErrNotFound
+	}
+	if err != nil {
+		return Recording{}, err
+	}
+	return rec, nil
+}
+
 func (r *Repo) UpdateTitleByUUIDForUser(ctx context.Context, userID int64, recUUID string, title string) error {
 	const q = `
 		UPDATE recordings
@@ -171,4 +202,17 @@ func (r *Repo) GetStoragePathByIDForUser(ctx context.Context, userID int64, reco
 		return "", ErrNotFound
 	}
 	return path, err
+}
+
+func (r *Repo) CountByUserAndStatus(ctx context.Context, userID int64, status string) (int64, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM recordings
+		WHERE user_id = ? AND status = ?
+	`
+	var count int64
+	if err := r.db.QueryRowContext(ctx, q, userID, status).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }

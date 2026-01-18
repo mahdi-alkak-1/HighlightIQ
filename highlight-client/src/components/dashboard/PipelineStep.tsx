@@ -24,10 +24,10 @@ const PipelineStep = ({ step }: PipelineStepProps) => {
         {showSpinner ? (
           <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/60 border-t-white" />
         ) : (
-          <span className="text-xs font-semibold">{step.title[0]}</span>
+          <span className="text-xs font-semibold">{step.label[0]}</span>
         )}
       </div>
-      <p className="text-xs font-semibold text-white/80">{step.title}</p>
+      <p className="text-xs font-semibold text-white/80">{step.label}</p>
       <p className="text-[10px] text-white/50">{step.status}</p>
     </div>
   );

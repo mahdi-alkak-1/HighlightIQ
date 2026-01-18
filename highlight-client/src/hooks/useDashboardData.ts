@@ -1,18 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { getClipCandidates } from "@/services/api/clipCandidates";
 import { getClips, getClipThumbnail } from "@/services/api/clips";
-import { getRecordings } from "@/services/api/recordings";
 import { getYoutubePublishesByClip } from "@/services/api/youtubePublishes";
-import {
-  DashboardData,
-  DashboardRange,
-  PipelineStepData,
-  StatCardData,
-  UploadRecord,
-} from "@/types/dashboard";
+import { DashboardData, DashboardRange, StatCardData, UploadRecord } from "@/types/dashboard";
 import { ClipApi } from "@/types/clips";
-import { ClipCandidateApi } from "@/types/clipCandidates";
-import { RecordingApi } from "@/types/recordings";
 import { YoutubePublishApi } from "@/types/youtubePublishes";
 import { isApiError } from "@/types/api";
 import { getAuthToken } from "@/utils/authStorage";
@@ -27,73 +17,6 @@ const formatDate = (isoString: string) => {
     day: "numeric",
     year: "numeric",
   }).format(date);
-};
-
-const buildPipeline = (
-  recordings: RecordingApi[],
-  candidates: ClipCandidateApi[],
-  clips: ClipApi[]
-): PipelineStepData[] => {
-  const safeRecordings = recordings.filter(isRecording);
-  const safeCandidates = candidates.filter(isCandidate);
-  const safeClips = clips.filter(isClip);
-
-  const uploadedCount = safeRecordings.filter((rec) => rec.Status === "uploaded").length;
-  const detectingCount = safeCandidates.filter((candidate) => candidate.Status === "new").length;
-  const reviewCount = safeCandidates.filter((candidate) => candidate.Status === "approved").length;
-  const publishCount = safeClips.filter((clip) => clip.status === "ready").length;
-  const syncCount = 0;
-
-  const stage =
-    syncCount > 0
-      ? "sync"
-      : publishCount > 0
-        ? "publish"
-        : reviewCount > 0
-          ? "review"
-          : detectingCount > 0
-            ? "detecting"
-            : uploadedCount > 0
-              ? "upload"
-              : "idle";
-
-  const completed = (step: string) => {
-    const order = ["upload", "detecting", "review", "publish", "sync"];
-    return order.indexOf(step) < order.indexOf(stage);
-  };
-
-  return [
-    {
-      title: "Upload",
-      status: `${uploadedCount} pending`,
-      state:
-        stage === "upload"
-          ? "active"
-          : uploadedCount > 0 || completed("upload")
-            ? "complete"
-            : "pending",
-    },
-    {
-      title: "Detecting",
-      status: `${detectingCount} processing`,
-      state: stage === "detecting" ? "active" : completed("detecting") ? "complete" : "pending",
-    },
-    {
-      title: "Review",
-      status: `${reviewCount} ready`,
-      state: stage === "review" ? "active" : completed("review") ? "complete" : "disabled",
-    },
-    {
-      title: "Publish",
-      status: `${publishCount} scheduled`,
-      state: stage === "publish" ? "active" : completed("publish") ? "complete" : "disabled",
-    },
-    {
-      title: "Sync",
-      status: `${syncCount} synced`,
-      state: stage === "sync" ? "active" : "disabled",
-    },
-  ];
 };
 
 const buildStats = (clips: ClipApi[], publishes: YoutubePublishApi[]): StatCardData[] => {
@@ -203,22 +126,12 @@ const buildUploads = (
     });
 };
 
-const isRecording = (rec: RecordingApi | null): rec is RecordingApi => {
-  return Boolean(rec && rec.Status);
-};
-
-const isCandidate = (candidate: ClipCandidateApi | null): candidate is ClipCandidateApi => {
-  return Boolean(candidate && candidate.Status);
-};
-
 const isClip = (clip: ClipApi | null): clip is ClipApi => {
   return Boolean(clip && clip.status);
 };
 
 export const useDashboardData = (range: DashboardRange) => {
-  const [recordings, setRecordings] = useState<RecordingApi[]>([]);
   const [clips, setClips] = useState<ClipApi[]>([]);
-  const [candidates, setCandidates] = useState<ClipCandidateApi[]>([]);
   const [publishes, setPublishes] = useState<YoutubePublishApi[]>([]);
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -238,26 +151,13 @@ export const useDashboardData = (range: DashboardRange) => {
           return;
         }
 
-        const recordingsResponse = await getRecordings();
         const clipsResponse = await getClips();
 
         if (!isMounted) {
           return;
         }
 
-        setRecordings(recordingsResponse.data ?? []);
         setClips(clipsResponse.data ?? []);
-
-        const candidateLists = await Promise.allSettled(
-          (recordingsResponse.data ?? []).map((rec) => getClipCandidates(rec.UUID))
-        );
-        if (!isMounted) {
-          return;
-        }
-        const flattened = candidateLists.flatMap((result) =>
-          result.status === "fulfilled" ? result.value.items : []
-        );
-        setCandidates(flattened);
 
         const publishLists = await Promise.allSettled(
           (clipsResponse.data ?? []).map((clip) => getYoutubePublishesByClip(clip.id))
@@ -339,10 +239,9 @@ export const useDashboardData = (range: DashboardRange) => {
   const dashboardData = useMemo<DashboardData>(() => {
     return {
       stats: buildStats(clips, publishes),
-      pipeline: buildPipeline(recordings, candidates, clips),
       uploads: buildUploads(publishes, clips, range, thumbnails),
     };
-  }, [recordings, candidates, clips, publishes, range, thumbnails]);
+  }, [clips, publishes, range, thumbnails]);
 
   return {
     ...dashboardData,
