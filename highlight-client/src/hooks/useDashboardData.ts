@@ -120,7 +120,7 @@ const buildUploads = (
         title: clip?.title ?? "Untitled clip",
         date: formatDate(dateString),
         status: statusLabel,
-        platform: "Shorts",
+        platform: "YouTube",
         thumbnail,
       };
     });
