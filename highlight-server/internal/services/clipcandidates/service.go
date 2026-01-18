@@ -63,6 +63,9 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 		return 0, ErrNotFound
 	}
 
+	// Mark recording as processing before detection starts.
+	_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "processing")
+
 	// ---- defaults (match python defaults) ----
 	if in.MaxClipSeconds <= 0 {
 		in.MaxClipSeconds = 60
@@ -124,6 +127,7 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 		CooldownSeconds:    in.CooldownSeconds,
 	})
 	if err != nil {
+		_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "failed")
 		return 0, err
 	}
 
@@ -167,7 +171,15 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 		})
 	}
 
-	return s.candidates.CreateMany(ctx, toInsert)
+	inserted, err := s.candidates.CreateMany(ctx, toInsert)
+	if err != nil {
+		_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "failed")
+		return 0, err
+	}
+
+	// Detection complete; mark ready (even if zero candidates).
+	_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "ready")
+	return inserted, nil
 }
 
 func (s *Service) ListByRecordingUUID(ctx context.Context, userID int64, recordingUUID string) ([]candidatesrepo.Candidate, error) {

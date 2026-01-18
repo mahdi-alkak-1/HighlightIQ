@@ -23,16 +23,25 @@ var ErrNotReady = errors.New("clips: not ready")
 type Service struct {
 	clipsRepo      *clipsrepo.Repo
 	recordingsRepo *recordingsrepo.Repo
+	candidatesRepo *candidatesrepo.Repo
 	clipsDir       string
 	ffmpegPath     string
 	notifier       PublishNotifier
 	clipsBaseURL   string
 }
 
-func New(clipsRepo *clipsrepo.Repo, recordingsRepo *recordingsrepo.Repo, clipsDir string, clipsBaseURL string, notifier PublishNotifier) *Service {
+func New(
+	clipsRepo *clipsrepo.Repo,
+	recordingsRepo *recordingsrepo.Repo,
+	candidatesRepo *candidatesrepo.Repo,
+	clipsDir string,
+	clipsBaseURL string,
+	notifier PublishNotifier,
+) *Service {
 	return &Service{
 		clipsRepo:      clipsRepo,
 		recordingsRepo: recordingsRepo,
+		candidatesRepo: candidatesRepo,
 		clipsDir:       clipsDir,
 		ffmpegPath:     resolveFFmpegPath(),
 		notifier:       notifier,
@@ -92,7 +101,7 @@ func (s *Service) Create(ctx context.Context, userID int64, in CreateInput) (cli
 		return clipsrepo.Clip{}, ErrNotFound
 	}
 
-	return s.clipsRepo.Create(ctx, clipsrepo.CreateParams{
+	clip, err := s.clipsRepo.Create(ctx, clipsrepo.CreateParams{
 		UserID:      userID,
 		RecordingID: rec.ID,
 		CandidateID: in.CandidateID,
@@ -103,6 +112,15 @@ func (s *Service) Create(ctx context.Context, userID int64, in CreateInput) (cli
 		Status:      "draft",
 		ExportPath:  nil,
 	})
+	if err != nil {
+		return clipsrepo.Clip{}, err
+	}
+
+	if in.CandidateID != nil && s.candidatesRepo != nil {
+		_ = s.candidatesRepo.UpdateStatusForUser(ctx, userID, *in.CandidateID, "approved")
+	}
+
+	return clip, nil
 }
 
 func (s *Service) Get(ctx context.Context, userID int64, id int64) (clipsrepo.Clip, error) {
@@ -225,6 +243,12 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 			return clipsrepo.Clip{}, ErrNotFound
 		}
 		return clipsrepo.Clip{}, err
+	}
+
+	if c.ExportPath != nil && *c.ExportPath != "" && c.Status == "ready" {
+		if _, err := os.Stat(*c.ExportPath); err == nil {
+			return c, nil
+		}
 	}
 
 	inputPath, err := s.recordingsRepo.GetStoragePathByIDForUser(ctx, userID, c.RecordingID)

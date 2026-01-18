@@ -109,6 +109,28 @@ func (r *Repo) UpdateStatus(ctx context.Context, id int64, status string) error 
 	return nil
 }
 
+func (r *Repo) UpdateStatusForUser(ctx context.Context, userID int64, id int64, status string) error {
+	const q = `
+		UPDATE clip_candidates c
+		JOIN recordings r ON r.id = c.recording_id
+		SET c.status = ?
+		WHERE c.id = ? AND r.user_id = ?
+		LIMIT 1
+	`
+	res, err := r.db.ExecContext(ctx, q, status, id, userID)
+	if err != nil {
+		return err
+	}
+	aff, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if aff == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *Repo) Delete(ctx context.Context, id int64) error {
 	const q = `DELETE FROM clip_candidates WHERE id = ? LIMIT 1`
 	res, err := r.db.ExecContext(ctx, q, id)

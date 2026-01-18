@@ -67,7 +67,7 @@ func main() {
 		publishNotifier = n8n.New(cfg.N8NPublishWebhookURL, cfg.N8NPublishWebhookAuth)
 	}
 
-	clipsService := clipssvc.New(clipsRepo, recRepo, clipsDir, cfg.ClipsBaseURL, publishNotifier)
+	clipsService := clipssvc.New(clipsRepo, recRepo, clipCandidatesRepo, clipsDir, cfg.ClipsBaseURL, publishNotifier)
 	youtubePublishesService := ypsvc.New(clipsRepo, ypRepo)
 	dashboardService := dashsvc.New(recRepo, clipCandidatesRepo, ypRepo)
 

@@ -161,6 +161,28 @@ func (r *Repo) UpdateTitleByUUIDForUser(ctx context.Context, userID int64, recUU
 	return nil
 }
 
+func (r *Repo) UpdateStatusByID(ctx context.Context, recordingID int64, status string) error {
+	const q = `
+		UPDATE recordings
+		SET status = ?
+		WHERE id = ?
+		LIMIT 1
+	`
+
+	res, err := r.db.ExecContext(ctx, q, status, recordingID)
+	if err != nil {
+		return err
+	}
+	aff, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if aff == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *Repo) DeleteByUUIDForUser(ctx context.Context, userID int64, recUUID string) (string, error) {
 	// We return storage_path so service can delete the file from disk
 	const sel = `
