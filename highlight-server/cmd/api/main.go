@@ -11,6 +11,7 @@ import (
 	authhandlers "highlightiq-server/internal/http/handlers/auth"
 	clipcandhandlers "highlightiq-server/internal/http/handlers/clipcandidates"
 	clipshandlers "highlightiq-server/internal/http/handlers/clips"
+	dashboardhandlers "highlightiq-server/internal/http/handlers/dashboard"
 	recordinghandlers "highlightiq-server/internal/http/handlers/recordings"
 	yphandlers "highlightiq-server/internal/http/handlers/youtubepublishes"
 	"highlightiq-server/internal/http/middleware"
@@ -28,6 +29,7 @@ import (
 	authsvc "highlightiq-server/internal/services/auth"
 	clipcandidatessvc "highlightiq-server/internal/services/clipcandidates"
 	clipssvc "highlightiq-server/internal/services/clips"
+	dashsvc "highlightiq-server/internal/services/dashboard"
 	recordingsvc "highlightiq-server/internal/services/recordings"
 	ypsvc "highlightiq-server/internal/services/youtubepublishes"
 )
@@ -65,8 +67,9 @@ func main() {
 		publishNotifier = n8n.New(cfg.N8NPublishWebhookURL, cfg.N8NPublishWebhookAuth)
 	}
 
-	clipsService := clipssvc.New(clipsRepo, recRepo, clipsDir, cfg.ClipsBaseURL, publishNotifier)
+	clipsService := clipssvc.New(clipsRepo, recRepo, clipCandidatesRepo, clipsDir, cfg.ClipsBaseURL, publishNotifier)
 	youtubePublishesService := ypsvc.New(clipsRepo, ypRepo)
+	dashboardService := dashsvc.New(recRepo, clipCandidatesRepo, ypRepo)
 
 	// handlers
 	authHandler := authhandlers.New(authService)
@@ -74,12 +77,13 @@ func main() {
 	clipHandler := clipcandhandlers.New(clipCandidatesService)
 	clipsHandler := clipshandlers.New(clipsService)
 	youtubePublishesHandler := yphandlers.New(youtubePublishesService, cfg.N8NWebhookSecret)
+	dashboardHandler := dashboardhandlers.New(dashboardService)
 
 	// middleware
 	jwtAuth := middleware.NewJWTAuth(usersRepo, cfg.JWTSecret)
 
 	// router
-	r := router.New(authHandler, recHandler, clipHandler, clipsHandler, youtubePublishesHandler, jwtAuth.Middleware)
+	r := router.New(authHandler, recHandler, clipHandler, clipsHandler, youtubePublishesHandler, dashboardHandler, jwtAuth.Middleware)
 
 	log.Println("API listening on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {

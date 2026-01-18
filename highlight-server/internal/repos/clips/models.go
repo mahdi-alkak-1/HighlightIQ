@@ -14,6 +14,7 @@ type Clip struct {
 	DurationSeconds int       `json:"duration_seconds"`
 	Status          string    `json:"status"`
 	ExportPath      *string   `json:"export_path,omitempty"`
+	ThumbnailPath   *string   `json:"thumbnail_path,omitempty"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
 }
@@ -28,6 +29,7 @@ type CreateParams struct {
 	EndMS       int
 	Status      string
 	ExportPath  *string
+	ThumbnailPath *string
 }
 
 type UpdateParams struct {
@@ -37,4 +39,5 @@ type UpdateParams struct {
 	EndMS      *int
 	Status     *string
 	ExportPath *string
+	ThumbnailPath *string
 }

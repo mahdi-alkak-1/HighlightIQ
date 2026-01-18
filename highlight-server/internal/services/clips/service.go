@@ -23,16 +23,25 @@ var ErrNotReady = errors.New("clips: not ready")
 type Service struct {
 	clipsRepo      *clipsrepo.Repo
 	recordingsRepo *recordingsrepo.Repo
+	candidatesRepo *candidatesrepo.Repo
 	clipsDir       string
 	ffmpegPath     string
 	notifier       PublishNotifier
 	clipsBaseURL   string
 }
 
-func New(clipsRepo *clipsrepo.Repo, recordingsRepo *recordingsrepo.Repo, clipsDir string, clipsBaseURL string, notifier PublishNotifier) *Service {
+func New(
+	clipsRepo *clipsrepo.Repo,
+	recordingsRepo *recordingsrepo.Repo,
+	candidatesRepo *candidatesrepo.Repo,
+	clipsDir string,
+	clipsBaseURL string,
+	notifier PublishNotifier,
+) *Service {
 	return &Service{
 		clipsRepo:      clipsRepo,
 		recordingsRepo: recordingsRepo,
+		candidatesRepo: candidatesRepo,
 		clipsDir:       clipsDir,
 		ffmpegPath:     resolveFFmpegPath(),
 		notifier:       notifier,
@@ -92,7 +101,7 @@ func (s *Service) Create(ctx context.Context, userID int64, in CreateInput) (cli
 		return clipsrepo.Clip{}, ErrNotFound
 	}
 
-	return s.clipsRepo.Create(ctx, clipsrepo.CreateParams{
+	clip, err := s.clipsRepo.Create(ctx, clipsrepo.CreateParams{
 		UserID:      userID,
 		RecordingID: rec.ID,
 		CandidateID: in.CandidateID,
@@ -103,6 +112,15 @@ func (s *Service) Create(ctx context.Context, userID int64, in CreateInput) (cli
 		Status:      "draft",
 		ExportPath:  nil,
 	})
+	if err != nil {
+		return clipsrepo.Clip{}, err
+	}
+
+	if in.CandidateID != nil && s.candidatesRepo != nil {
+		_ = s.candidatesRepo.UpdateStatusForUser(ctx, userID, *in.CandidateID, "approved")
+	}
+
+	return clip, nil
 }
 
 func (s *Service) Get(ctx context.Context, userID int64, id int64) (clipsrepo.Clip, error) {
@@ -135,6 +153,7 @@ type UpdateInput struct {
 	StartMS *int
 	EndMS   *int
 	Status  *string
+	ThumbnailPath *string
 }
 
 func (s *Service) Update(ctx context.Context, userID int64, id int64, in UpdateInput) (clipsrepo.Clip, error) {
@@ -148,6 +167,7 @@ func (s *Service) Update(ctx context.Context, userID int64, id int64, in UpdateI
 		StartMS: in.StartMS,
 		EndMS:   in.EndMS,
 		Status:  in.Status,
+		ThumbnailPath: in.ThumbnailPath,
 	})
 	if err != nil {
 		if errors.Is(err, clipsrepo.ErrNotFound) {
@@ -185,6 +205,22 @@ func (s *Service) GetExport(ctx context.Context, userID int64, id int64) (string
 	return *c.ExportPath, filepath.Base(*c.ExportPath), nil
 }
 
+func (s *Service) GetThumbnail(ctx context.Context, userID int64, id int64) (string, string, error) {
+	c, err := s.clipsRepo.GetByIDForUser(ctx, userID, id)
+	if err != nil {
+		if errors.Is(err, clipsrepo.ErrNotFound) {
+			return "", "", ErrNotFound
+		}
+		return "", "", err
+	}
+
+	if c.ThumbnailPath == nil || *c.ThumbnailPath == "" {
+		return "", "", ErrNotReady
+	}
+
+	return *c.ThumbnailPath, filepath.Base(*c.ThumbnailPath), nil
+}
+
 // Export generates an mp4 file using ffmpeg and updates export_path + status.
 // NOTE: Set FFMPEG_PATH to either:
 //   - the directory containing ffmpeg.exe (Windows), OR
@@ -209,6 +245,12 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 		return clipsrepo.Clip{}, err
 	}
 
+	if c.ExportPath != nil && *c.ExportPath != "" && c.Status == "ready" {
+		if _, err := os.Stat(*c.ExportPath); err == nil {
+			return c, nil
+		}
+	}
+
 	inputPath, err := s.recordingsRepo.GetStoragePathByIDForUser(ctx, userID, c.RecordingID)
 	if err != nil {
 		return clipsrepo.Clip{}, ErrNotFound
@@ -222,6 +264,7 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 	}
 
 	outPath := filepath.Join(s.clipsDir, fmt.Sprintf("clip_%d.mp4", c.ID))
+	thumbPath := filepath.Join(s.clipsDir, fmt.Sprintf("clip_%d_thumb.jpg", c.ID))
 
 	startSec := float64(c.StartMS) / 1000.0
 	durSec := float64(c.EndMS-c.StartMS) / 1000.0
@@ -262,10 +305,19 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 		return clipsrepo.Clip{}, fmt.Errorf("ffmpeg failed: %s", msg)
 	}
 
+	if err := s.generateThumbnail(ctx, outPath, thumbPath, durSec); err != nil {
+		failed := "failed"
+		_, _ = s.clipsRepo.UpdateByIDForUser(ctx, userID, id, clipsrepo.UpdateParams{
+			Status: &failed,
+		})
+		return clipsrepo.Clip{}, err
+	}
+
 	ready := "ready"
 	updated, err := s.clipsRepo.UpdateByIDForUser(ctx, userID, id, clipsrepo.UpdateParams{
 		Status:     &ready,
 		ExportPath: &outPath,
+		ThumbnailPath: &thumbPath,
 	})
 	if err != nil {
 		return clipsrepo.Clip{}, err
@@ -291,4 +343,37 @@ func (s *Service) buildClipURL(exportPath *string) string {
 
 	base := strings.TrimRight(s.clipsBaseURL, "/")
 	return base + "/" + filepath.Base(*exportPath)
+}
+
+func (s *Service) generateThumbnail(ctx context.Context, inputPath string, outputPath string, durationSeconds float64) error {
+	captureSec := 5.0
+	if durationSeconds > 0 && durationSeconds < 5.0 {
+		captureSec = durationSeconds / 2.0
+		if captureSec < 1.0 {
+			captureSec = durationSeconds
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, s.ffmpegPath,
+		"-hide_banner",
+		"-loglevel", "error",
+		"-y",
+		"-ss", fmt.Sprintf("%.3f", captureSec),
+		"-i", inputPath,
+		"-frames:v", "1",
+		"-q:v", "2",
+		outputPath,
+	)
+	cmd.Env = os.Environ()
+
+	out, runErr := cmd.CombinedOutput()
+	if runErr != nil {
+		msg := strings.TrimSpace(string(out))
+		if msg == "" {
+			msg = runErr.Error()
+		}
+		return fmt.Errorf("thumbnail generation failed: %s", msg)
+	}
+
+	return nil
 }

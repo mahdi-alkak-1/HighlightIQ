@@ -23,6 +23,24 @@ input, button {
   font-family: inherit;
 }
 
+.scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 93, 131, 0.6) transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-slim::-webkit-scrollbar-thumb {
+  background-color: rgba(74, 93, 131, 0.6);
+  border-radius: 999px;
+}
+
 .auth-hero-gradient {
   background: radial-gradient(circle at 15% 20%, rgba(28, 47, 255, 0.15), transparent 45%),
     radial-gradient(circle at 70% 20%, rgba(37, 123, 255, 0.2), transparent 55%),

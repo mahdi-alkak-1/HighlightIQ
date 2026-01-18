@@ -6,6 +6,7 @@ import (
 	authhandlers "highlightiq-server/internal/http/handlers/auth"
 	clipcandhandlers "highlightiq-server/internal/http/handlers/clipcandidates"
 	clipshandlers "highlightiq-server/internal/http/handlers/clips"
+	dashboardhandlers "highlightiq-server/internal/http/handlers/dashboard"
 	recordinghandlers "highlightiq-server/internal/http/handlers/recordings"
 	yphandlers "highlightiq-server/internal/http/handlers/youtubepublishes"
 
@@ -18,6 +19,7 @@ func New(
 	clipCandidatesHandler *clipcandhandlers.Handler,
 	clipsHandler *clipshandlers.Handler,
 	youtubePublishesHandler *yphandlers.Handler,
+	dashboardHandler *dashboardhandlers.Handler,
 	authMiddleware func(http.Handler) http.Handler,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -82,6 +84,7 @@ func New(
 						r3.Delete("/", clipsHandler.Delete)
 						r3.Post("/export", clipsHandler.Export)
 						r3.Get("/download", clipsHandler.Download)
+						r3.Get("/thumbnail", clipsHandler.Thumbnail)
 
 						if youtubePublishesHandler != nil {
 							r3.Route("/youtube-publishes", func(yr chi.Router) {
@@ -91,6 +94,10 @@ func New(
 						}
 					})
 				})
+			}
+
+			if dashboardHandler != nil {
+				pr.Get("/dashboard/pipeline", dashboardHandler.Pipeline)
 			}
 
 			if youtubePublishesHandler != nil {

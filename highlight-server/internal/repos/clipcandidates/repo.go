@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 var ErrNotFound = errors.New("clipcandidates: not found")
@@ -108,6 +109,28 @@ func (r *Repo) UpdateStatus(ctx context.Context, id int64, status string) error 
 	return nil
 }
 
+func (r *Repo) UpdateStatusForUser(ctx context.Context, userID int64, id int64, status string) error {
+	const q = `
+		UPDATE clip_candidates c
+		JOIN recordings r ON r.id = c.recording_id
+		SET c.status = ?
+		WHERE c.id = ? AND r.user_id = ?
+		LIMIT 1
+	`
+	res, err := r.db.ExecContext(ctx, q, status, id, userID)
+	if err != nil {
+		return err
+	}
+	aff, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if aff == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *Repo) Delete(ctx context.Context, id int64) error {
 	const q = `DELETE FROM clip_candidates WHERE id = ? LIMIT 1`
 	res, err := r.db.ExecContext(ctx, q, id)
@@ -150,4 +173,49 @@ func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Cand
 		c.DetectedJSON = &s
 	}
 	return c, nil
+}
+
+func (r *Repo) CountByUserAndStatus(ctx context.Context, userID int64, status string) (int64, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM clip_candidates c
+		JOIN recordings r ON r.id = c.recording_id
+		WHERE r.user_id = ? AND c.status = ?
+	`
+	var count int64
+	if err := r.db.QueryRowContext(ctx, q, userID, status).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *Repo) CountByRecordingAndStatus(ctx context.Context, recordingID int64, status string) (int64, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM clip_candidates
+		WHERE recording_id = ? AND status = ?
+	`
+	var count int64
+	if err := r.db.QueryRowContext(ctx, q, recordingID, status).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (r *Repo) RejectStaleByUser(ctx context.Context, userID int64, cutoff time.Time) (int64, error) {
+	const q = `
+		UPDATE clip_candidates c
+		JOIN recordings r ON r.id = c.recording_id
+		SET c.status = 'rejected'
+		WHERE r.user_id = ? AND c.status = 'new' AND c.created_at < ?
+	`
+	res, err := r.db.ExecContext(ctx, q, userID, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	aff, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return aff, nil
 }
