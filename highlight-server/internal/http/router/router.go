@@ -52,6 +52,7 @@ func New(
 						r3.Get("/", recordingsHandler.Get)
 						r3.Patch("/", recordingsHandler.UpdateTitle)
 						r3.Delete("/", recordingsHandler.Delete)
+						r3.Get("/thumbnail", recordingsHandler.Thumbnail)
 
 						// Nested clip candidates for a recording
 						if clipCandidatesHandler != nil {

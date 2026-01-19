@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	clipsrepo "highlightiq-server/internal/repos/clips"
+	candidatesrepo "highlightiq-server/internal/repos/clipcandidates"
 	recordingsrepo "highlightiq-server/internal/repos/recordings"
 )
 
@@ -322,6 +323,8 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 	if err != nil {
 		return clipsrepo.Clip{}, err
 	}
+
+	_ = s.recordingsRepo.UpdateStatusByID(ctx, c.RecordingID, "used")
 
 	if s.notifier != nil {
 		clipURL := s.buildClipURL(updated.ExportPath)
