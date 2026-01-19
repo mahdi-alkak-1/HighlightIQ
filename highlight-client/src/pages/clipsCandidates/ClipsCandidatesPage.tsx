@@ -118,8 +118,6 @@ const ClipsCandidatesPage = () => {
               </div>
             ) : (
               <PreviewPanel
-                imageUrl={previewImage}
-                title={clipTitle || "Clip preview"}
                 start={timelineStart}
                 end={timelineEnd}
                 duration={timelineDuration}
