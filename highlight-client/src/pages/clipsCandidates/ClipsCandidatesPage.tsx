@@ -1,0 +1,131 @@
+import { useMemo, useState } from "react";
+import CandidateList from "@/components/clipStudio/CandidateList";
+import ClipDetailsPanel from "@/components/clipStudio/ClipDetailsPanel";
+import PreviewPanel from "@/components/clipStudio/PreviewPanel";
+import PublishConnectionBar from "@/components/clipStudio/PublishConnectionBar";
+import PublishModal from "@/components/clipStudio/PublishModal";
+import StudioHeader from "@/components/clipStudio/StudioHeader";
+import DashboardLayout from "@/layouts/DashboardLayout";
+import { useClipStudio } from "@/hooks/useClipStudio";
+import { maxClipDurationSeconds } from "@/data/clipStudioData";
+
+const ClipsCandidatesPage = () => {
+  const {
+    candidates,
+    selectedCandidateId,
+    setSelectedCandidateId,
+    recordingThumbnail,
+    timelineStart,
+    timelineEnd,
+    recordingDuration,
+    updateTimelineStart,
+    updateTimelineEnd,
+    clipTitle,
+    setClipTitle,
+    isGenerating,
+    isPublishing,
+    publishConnected,
+    setPublishConnected,
+    modalMessage,
+    setModalMessage,
+    hasGeneratedClip,
+    isPublishReady,
+    handleGenerate,
+    handlePublish,
+    isLoading,
+    errorMessage,
+  } = useClipStudio();
+
+  const [captionStyle, setCaptionStyle] = useState("clean");
+  const [hashtags, setHashtags] = useState<string[]>([]);
+
+  const previewImage = recordingThumbnail ?? "/images/register-hero.png";
+  const timelineDuration = Math.max(1, Math.round(timelineEnd - timelineStart));
+
+  const candidateItems = useMemo(
+    () =>
+      candidates.map((candidate) => ({
+        id: candidate.id,
+        title: candidate.label,
+        timeLabel: candidate.timeLabel,
+      })),
+    [candidates]
+  );
+
+  const toggleHashtag = (tag: string) => {
+    setHashtags((prev) =>
+      prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]
+    );
+  };
+
+  const isGenerateDisabled = !selectedCandidateId || isGenerating || hasGeneratedClip;
+  const isPublishDisabled = !selectedCandidateId || !isPublishReady;
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <StudioHeader
+          isGenerateDisabled={isGenerateDisabled}
+          isPublishDisabled={isPublishDisabled}
+          isGenerating={isGenerating}
+          isPublishing={isPublishing}
+          hasGeneratedClip={hasGeneratedClip}
+          onGenerate={handleGenerate}
+          onPublish={handlePublish}
+        />
+
+        {errorMessage && (
+          <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-200">
+            {errorMessage}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[240px_1fr_280px]">
+          <CandidateList
+            items={candidateItems}
+            activeId={selectedCandidateId}
+            thumbnail={previewImage}
+            onSelect={setSelectedCandidateId}
+          />
+
+          <div>
+            {isLoading ? (
+              <div className="rounded-xl border border-brand-border bg-brand-panel px-6 py-10 text-sm text-white/60">
+                Loading candidates...
+              </div>
+            ) : (
+              <PreviewPanel
+                imageUrl={previewImage}
+                title={clipTitle || "Clip preview"}
+                start={timelineStart}
+                end={timelineEnd}
+                duration={timelineDuration}
+                maxDuration={maxClipDurationSeconds}
+                totalDuration={Math.max(1, recordingDuration)}
+                onStartChange={updateTimelineStart}
+                onEndChange={updateTimelineEnd}
+              />
+            )}
+          </div>
+
+          <ClipDetailsPanel
+            title={clipTitle}
+            onTitleChange={setClipTitle}
+            captionStyle={captionStyle}
+            onCaptionStyleChange={setCaptionStyle}
+            hashtags={hashtags}
+            onHashtagToggle={toggleHashtag}
+          />
+        </div>
+
+        <PublishConnectionBar connected={publishConnected} onToggle={setPublishConnected} />
+      </div>
+
+      {modalMessage && (
+        <PublishModal message={modalMessage} onClose={() => setModalMessage(null)} />
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default ClipsCandidatesPage;
