@@ -5,7 +5,7 @@ interface RecordingStatusBadgeProps {
 const statusStyles: Record<string, string> = {
   uploaded: "bg-brand-blue/15 text-brand-blue",
   processing: "bg-brand-processing/15 text-brand-processing",
-  ready: "bg-brand-ready/15 text-brand-ready",
+  used: "bg-brand-ready/15 text-brand-ready",
   failed: "bg-red-500/15 text-red-400",
 };
 
