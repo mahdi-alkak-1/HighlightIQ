@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -16,6 +17,7 @@ import (
 	"highlightiq-server/internal/http/response"
 	recRepo "highlightiq-server/internal/repos/recordings"
 	recReq "highlightiq-server/internal/requests/recordings"
+	clipcand "highlightiq-server/internal/services/clipcandidates"
 )
 
 type RecordingService interface {
@@ -26,12 +28,17 @@ type RecordingService interface {
 	Delete(ctx context.Context, userID int64, recUUID string) error
 }
 
-type Handler struct {
-	svc RecordingService
+type CandidateDetector interface {
+	DetectAndStore(ctx context.Context, userID int64, in clipcand.DetectInput) (int64, error)
 }
 
-func New(svc RecordingService) *Handler {
-	return &Handler{svc: svc}
+type Handler struct {
+	svc RecordingService
+	detector CandidateDetector
+}
+
+func New(svc RecordingService, detector CandidateDetector) *Handler {
+	return &Handler{svc: svc, detector: detector}
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +93,18 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.JSON(w, http.StatusInternalServerError, map[string]any{"message": "internal server error"})
 		return
+	}
+
+	if h.detector != nil {
+		recUUID := rec.UUID
+		userID := u.ID
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+			_, _ = h.detector.DetectAndStore(ctx, userID, clipcand.DetectInput{
+				RecordingUUID: recUUID,
+			})
+		}()
 	}
 
 	response.JSON(w, http.StatusCreated, rec)
@@ -230,4 +249,49 @@ func (h *Handler) Thumbnail(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("Content-Disposition", "inline; filename=\""+filepath.Base(rec.ThumbnailPath)+"\"")
 	http.ServeContent(w, r, filepath.Base(rec.ThumbnailPath), info.ModTime(), f)
+}
+
+func (h *Handler) Video(w http.ResponseWriter, r *http.Request) {
+	u, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.JSON(w, http.StatusUnauthorized, map[string]any{"message": "unauthorized"})
+		return
+	}
+
+	recUUID := chi.URLParam(r, "uuid")
+	rec, err := h.svc.Get(r.Context(), u.ID, recUUID)
+	if err != nil {
+		if errors.Is(err, recRepo.ErrNotFound) {
+			response.JSON(w, http.StatusNotFound, map[string]any{"message": "not found"})
+			return
+		}
+		response.JSON(w, http.StatusInternalServerError, map[string]any{"message": "internal server error"})
+		return
+	}
+
+	if rec.StoragePath == "" {
+		response.JSON(w, http.StatusConflict, map[string]any{"message": "video not ready"})
+		return
+	}
+
+	f, err := os.Open(rec.StoragePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			response.JSON(w, http.StatusNotFound, map[string]any{"message": "file not found"})
+			return
+		}
+		response.JSON(w, http.StatusInternalServerError, map[string]any{"message": "failed to open file"})
+		return
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, map[string]any{"message": "failed to stat file"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "video/mp4")
+	w.Header().Set("Content-Disposition", "inline; filename=\""+filepath.Base(rec.StoragePath)+"\"")
+	http.ServeContent(w, r, filepath.Base(rec.StoragePath), info.ModTime(), f)
 }

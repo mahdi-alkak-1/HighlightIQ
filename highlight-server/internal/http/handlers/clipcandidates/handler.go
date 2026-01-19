@@ -10,6 +10,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -140,4 +142,51 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) Thumbnail(w http.ResponseWriter, r *http.Request) {
+	u, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.JSON(w, http.StatusUnauthorized, map[string]string{"message": "unauthorized"})
+		return
+	}
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, map[string]string{"message": "invalid id"})
+		return
+	}
+
+	cand, err := h.svc.GetByIDForUser(r.Context(), u.ID, id)
+	if err != nil {
+		response.JSON(w, http.StatusNotFound, map[string]string{"message": "not found"})
+		return
+	}
+
+	if cand.ThumbnailPath == nil || *cand.ThumbnailPath == "" {
+		response.JSON(w, http.StatusConflict, map[string]string{"message": "thumbnail not ready"})
+		return
+	}
+
+	f, err := os.Open(*cand.ThumbnailPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			response.JSON(w, http.StatusNotFound, map[string]string{"message": "file not found"})
+			return
+		}
+		response.JSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to open file"})
+		return
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, map[string]string{"message": "failed to stat file"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Disposition", "inline; filename=\""+filepath.Base(*cand.ThumbnailPath)+"\"")
+	http.ServeContent(w, r, filepath.Base(*cand.ThumbnailPath), info.ModTime(), f)
 }

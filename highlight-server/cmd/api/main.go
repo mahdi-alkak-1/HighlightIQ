@@ -73,7 +73,7 @@ func main() {
 
 	// handlers
 	authHandler := authhandlers.New(authService)
-	recHandler := recordinghandlers.New(recService)
+	recHandler := recordinghandlers.New(recService, clipCandidatesService)
 	clipHandler := clipcandhandlers.New(clipCandidatesService)
 	clipsHandler := clipshandlers.New(clipsService)
 	youtubePublishesHandler := yphandlers.New(youtubePublishesService, cfg.N8NWebhookSecret)

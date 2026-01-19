@@ -3,7 +3,13 @@ package clipcandidates
 import (
 	"context"
 	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 	"sort"
+	"strings"
 
 	"highlightiq-server/internal/integrations/clipper"
 	candidatesrepo "highlightiq-server/internal/repos/clipcandidates"
@@ -16,6 +22,7 @@ type Service struct {
 	recordings *recordingsrepo.Repo
 	candidates *candidatesrepo.Repo
 	clipper    *clipper.Client
+	ffmpegPath string
 }
 
 func New(recordings *recordingsrepo.Repo, candidates *candidatesrepo.Repo, clipperClient *clipper.Client) *Service {
@@ -23,6 +30,7 @@ func New(recordings *recordingsrepo.Repo, candidates *candidatesrepo.Repo, clipp
 		recordings: recordings,
 		candidates: candidates,
 		clipper:    clipperClient,
+		ffmpegPath: resolveFFmpegPath(),
 	}
 }
 
@@ -161,11 +169,18 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 
 	toInsert := make([]candidatesrepo.CreateParams, 0, len(picked))
 	for _, c := range picked {
+		thumbPath, err := s.generateCandidateThumbnail(ctx, rec.UUID, rec.StoragePath, c.StartMS)
+		if err != nil {
+			_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "failed")
+			return 0, err
+		}
+
 		toInsert = append(toInsert, candidatesrepo.CreateParams{
 			RecordingID:  rec.ID,
 			StartMS:      c.StartMS,
 			EndMS:        c.EndMS,
 			Score:        c.Score,
+			ThumbnailPath: thumbPath,
 			DetectedJSON: nil,
 			Status:       "new",
 		})
@@ -190,6 +205,10 @@ func (s *Service) ListByRecordingUUID(ctx context.Context, userID int64, recordi
 	return s.candidates.ListByRecordingID(ctx, rec.ID)
 }
 
+func (s *Service) GetByIDForUser(ctx context.Context, userID int64, id int64) (candidatesrepo.Candidate, error) {
+	return s.candidates.GetByIDForUser(ctx, userID, id)
+}
+
 func (s *Service) UpdateStatus(ctx context.Context, id int64, status string) error {
 	return s.candidates.UpdateStatus(ctx, id, status)
 }
@@ -203,4 +222,68 @@ func abs(x int) int {
 		return -x
 	}
 	return x
+}
+
+func resolveFFmpegPath() string {
+	if v := strings.TrimSpace(os.Getenv("FFMPEG_PATH")); v != "" {
+		if st, err := os.Stat(v); err == nil && st.IsDir() {
+			if runtime.GOOS == "windows" {
+				return filepath.Join(v, "ffmpeg.exe")
+			}
+			return filepath.Join(v, "ffmpeg")
+		}
+		return v
+	}
+
+	if p, err := exec.LookPath("ffmpeg"); err == nil {
+		return p
+	}
+	if runtime.GOOS == "windows" {
+		if p, err := exec.LookPath("ffmpeg.exe"); err == nil {
+			return p
+		}
+	}
+
+	return "ffmpeg"
+}
+
+func (s *Service) generateCandidateThumbnail(ctx context.Context, recUUID string, videoPath string, startMS int) (*string, error) {
+	if s.ffmpegPath == "ffmpeg" || s.ffmpegPath == "ffmpeg.exe" {
+		s.ffmpegPath = resolveFFmpegPath()
+	}
+	if strings.EqualFold(filepath.Base(s.ffmpegPath), "ffmpeg") || strings.EqualFold(filepath.Base(s.ffmpegPath), "ffmpeg.exe") {
+		if _, err := exec.LookPath(s.ffmpegPath); err != nil && !filepath.IsAbs(s.ffmpegPath) {
+			return nil, fmt.Errorf("ffmpeg not found: %w", err)
+		}
+	}
+
+	thumbDir := `D:\recordings\candidate-thumbs`
+	if err := os.MkdirAll(thumbDir, 0o755); err != nil {
+		return nil, err
+	}
+
+	startSec := float64(startMS) / 1000.0
+	outPath := filepath.Join(thumbDir, fmt.Sprintf("%s_%d.jpg", recUUID, startMS))
+	cmd := exec.CommandContext(ctx, s.ffmpegPath,
+		"-hide_banner",
+		"-loglevel", "error",
+		"-y",
+		"-ss", fmt.Sprintf("%.3f", startSec),
+		"-i", videoPath,
+		"-frames:v", "1",
+		"-q:v", "2",
+		outPath,
+	)
+	cmd.Env = os.Environ()
+
+	out, runErr := cmd.CombinedOutput()
+	if runErr != nil {
+		msg := strings.TrimSpace(string(out))
+		if msg == "" {
+			msg = runErr.Error()
+		}
+		return nil, fmt.Errorf("candidate thumbnail failed: %s", msg)
+	}
+
+	return &outPath, nil
 }
