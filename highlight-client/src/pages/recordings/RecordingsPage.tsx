@@ -87,9 +87,6 @@ const RecordingsPage = () => {
               Upload gameplay recordings and generate highlight clips.
             </p>
           </div>
-          <button className="rounded-lg bg-brand-blue px-4 py-2 text-xs font-semibold text-white">
-            Upload Recording
-          </button>
         </div>
 
         {errorMessage && (
