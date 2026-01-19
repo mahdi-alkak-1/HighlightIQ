@@ -324,6 +324,8 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 		return clipsrepo.Clip{}, err
 	}
 
+	_ = s.recordingsRepo.UpdateStatusByID(ctx, c.RecordingID, "used")
+
 	if s.notifier != nil {
 		clipURL := s.buildClipURL(updated.ExportPath)
 		if err := s.notifier.NotifyClipExported(ctx, updated, clipURL); err != nil {

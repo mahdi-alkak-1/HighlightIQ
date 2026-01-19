@@ -177,8 +177,8 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 		return 0, err
 	}
 
-	// Detection complete; mark ready (even if zero candidates).
-	_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "ready")
+	// Detection complete; recording stays uploaded until a clip is exported.
+	_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "uploaded")
 	return inserted, nil
 }
 

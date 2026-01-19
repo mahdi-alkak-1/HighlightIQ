@@ -6,7 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -52,6 +54,12 @@ func (s *Service) Create(ctx context.Context, userID int64, title string, game s
 		return recRepo.Recording{}, err
 	}
 
+	durationSeconds, err := s.getVideoDurationSeconds(ctx, fullPath)
+	if err != nil {
+		_ = os.Remove(fullPath)
+		return recRepo.Recording{}, err
+	}
+
 	thumbnailPath, err := s.generateThumbnail(ctx, fullPath, recUUID)
 	if err != nil {
 		_ = os.Remove(fullPath)
@@ -66,7 +74,7 @@ func (s *Service) Create(ctx context.Context, userID int64, title string, game s
 		OriginalName:    originalName,
 		StoragePath:     fullPath,
 		ThumbnailPath:   thumbnailPath,
-		DurationSeconds: 0,
+		DurationSeconds: durationSeconds,
 		Status:          "uploaded",
 	})
 	if err != nil {
@@ -190,6 +198,42 @@ func (s *Service) generateThumbnail(ctx context.Context, videoPath string, recUU
 	}
 
 	return outPath, nil
+}
+
+func (s *Service) getVideoDurationSeconds(ctx context.Context, videoPath string) (int, error) {
+	if s.ffmpegPath == "ffmpeg" || s.ffmpegPath == "ffmpeg.exe" {
+		s.ffmpegPath = resolveFFmpegPath()
+	}
+	if strings.EqualFold(filepath.Base(s.ffmpegPath), "ffmpeg") || strings.EqualFold(filepath.Base(s.ffmpegPath), "ffmpeg.exe") {
+		if _, err := exec.LookPath(s.ffmpegPath); err != nil && !filepath.IsAbs(s.ffmpegPath) {
+			return 0, fmt.Errorf("ffmpeg not found: %w", err)
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, s.ffmpegPath,
+		"-hide_banner",
+		"-i", videoPath,
+		"-f", "null",
+		"-",
+	)
+	cmd.Env = os.Environ()
+
+	output, err := cmd.CombinedOutput()
+	if err != nil && len(output) == 0 {
+		return 0, err
+	}
+
+	// ffmpeg prints duration in stderr output like: Duration: 00:10:15.12
+	re := regexp.MustCompile(`Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2})`)
+	matches := re.FindStringSubmatch(string(output))
+	if len(matches) != 4 {
+		return 0, fmt.Errorf("duration not found")
+	}
+
+	hours, _ := strconv.Atoi(matches[1])
+	minutes, _ := strconv.Atoi(matches[2])
+	seconds, _ := strconv.Atoi(matches[3])
+	return hours*3600 + minutes*60 + seconds, nil
 }
 
 // Optional helper if you want to format time later
