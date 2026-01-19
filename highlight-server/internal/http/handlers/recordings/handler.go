@@ -6,6 +6,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -183,4 +185,49 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.JSON(w, http.StatusOK, map[string]any{"message": "deleted"})
+}
+
+func (h *Handler) Thumbnail(w http.ResponseWriter, r *http.Request) {
+	u, ok := middleware.GetAuthUser(r.Context())
+	if !ok {
+		response.JSON(w, http.StatusUnauthorized, map[string]any{"message": "unauthorized"})
+		return
+	}
+
+	recUUID := chi.URLParam(r, "uuid")
+	rec, err := h.svc.Get(r.Context(), u.ID, recUUID)
+	if err != nil {
+		if errors.Is(err, recRepo.ErrNotFound) {
+			response.JSON(w, http.StatusNotFound, map[string]any{"message": "not found"})
+			return
+		}
+		response.JSON(w, http.StatusInternalServerError, map[string]any{"message": "internal server error"})
+		return
+	}
+
+	if rec.ThumbnailPath == "" {
+		response.JSON(w, http.StatusConflict, map[string]any{"message": "thumbnail not ready"})
+		return
+	}
+
+	f, err := os.Open(rec.ThumbnailPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			response.JSON(w, http.StatusNotFound, map[string]any{"message": "file not found"})
+			return
+		}
+		response.JSON(w, http.StatusInternalServerError, map[string]any{"message": "failed to open file"})
+		return
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, map[string]any{"message": "failed to stat file"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Disposition", "inline; filename=\""+filepath.Base(rec.ThumbnailPath)+"\"")
+	http.ServeContent(w, r, filepath.Base(rec.ThumbnailPath), info.ModTime(), f)
 }

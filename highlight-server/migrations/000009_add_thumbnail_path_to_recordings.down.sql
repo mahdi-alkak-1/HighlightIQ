@@ -1,0 +1,2 @@
+ALTER TABLE recordings
+  DROP COLUMN thumbnail_path;

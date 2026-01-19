@@ -15,6 +15,7 @@ type Recording struct {
 	Game            string
 	OriginalName    string
 	StoragePath     string
+	ThumbnailPath   string
 	DurationSeconds int
 	Status          string
 	CreatedAt       time.Time
@@ -28,6 +29,7 @@ type CreateParams struct {
 	Game            string
 	OriginalName    string
 	StoragePath     string
+	ThumbnailPath   string
 	DurationSeconds int
 	Status          string
 }
