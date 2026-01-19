@@ -66,3 +66,19 @@ export const getRecordingThumbnail = async (uuid: string): Promise<string> => {
   const blob = await response.blob();
   return URL.createObjectURL(blob);
 };
+
+export const getRecordingVideo = async (uuid: string): Promise<string> => {
+  const token = getAuthToken();
+  const response = await fetch(`/recordings/${uuid}/video`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("video fetch failed");
+  }
+
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+};

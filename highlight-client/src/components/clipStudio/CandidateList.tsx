@@ -4,16 +4,16 @@ interface CandidateItem {
   id: number;
   title: string;
   timeLabel: string;
+  thumbnail: string;
 }
 
 interface CandidateListProps {
   items: CandidateItem[];
   activeId: number | null;
-  thumbnail: string;
   onSelect: (id: number) => void;
 }
 
-const CandidateList = ({ items, activeId, thumbnail, onSelect }: CandidateListProps) => {
+const CandidateList = ({ items, activeId, onSelect }: CandidateListProps) => {
   return (
     <div className="rounded-xl border border-brand-border bg-brand-panel p-4">
       <h3 className="text-xs font-semibold text-white">Candidates</h3>
@@ -24,7 +24,7 @@ const CandidateList = ({ items, activeId, thumbnail, onSelect }: CandidateListPr
             key={item.id}
             title={item.title}
             timeLabel={item.timeLabel}
-            thumbnail={thumbnail}
+            thumbnail={item.thumbnail}
             isActive={activeId === item.id}
             onSelect={() => onSelect(item.id)}
           />

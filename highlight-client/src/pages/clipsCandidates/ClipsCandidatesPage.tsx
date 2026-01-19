@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CandidateList from "@/components/clipStudio/CandidateList";
 import ClipDetailsPanel from "@/components/clipStudio/ClipDetailsPanel";
 import PreviewPanel from "@/components/clipStudio/PreviewPanel";
 import PublishConnectionBar from "@/components/clipStudio/PublishConnectionBar";
 import PublishModal from "@/components/clipStudio/PublishModal";
 import StudioHeader from "@/components/clipStudio/StudioHeader";
+import VideoPreview from "@/components/clipStudio/VideoPreview";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { useClipStudio } from "@/hooks/useClipStudio";
 import { maxClipDurationSeconds } from "@/data/clipStudioData";
@@ -15,6 +16,8 @@ const ClipsCandidatesPage = () => {
     selectedCandidateId,
     setSelectedCandidateId,
     recordingThumbnail,
+    recordingVideo,
+    candidateThumbnails,
     timelineStart,
     timelineEnd,
     recordingDuration,
@@ -38,8 +41,12 @@ const ClipsCandidatesPage = () => {
 
   const [captionStyle, setCaptionStyle] = useState("clean");
   const [hashtags, setHashtags] = useState<string[]>([]);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const previewImage = recordingThumbnail ?? "/images/register-hero.png";
+  const previewImage =
+    (selectedCandidateId ? candidateThumbnails[selectedCandidateId] : null) ??
+    recordingThumbnail ??
+    "/images/register-hero.png";
   const timelineDuration = Math.max(1, Math.round(timelineEnd - timelineStart));
 
   const candidateItems = useMemo(
@@ -48,8 +55,9 @@ const ClipsCandidatesPage = () => {
         id: candidate.id,
         title: candidate.label,
         timeLabel: candidate.timeLabel,
+        thumbnail: candidateThumbnails[candidate.id] ?? previewImage,
       })),
-    [candidates]
+    [candidates, candidateThumbnails, previewImage]
   );
 
   const toggleHashtag = (tag: string) => {
@@ -60,6 +68,14 @@ const ClipsCandidatesPage = () => {
 
   const isGenerateDisabled = !selectedCandidateId || isGenerating || hasGeneratedClip;
   const isPublishDisabled = !selectedCandidateId || !isPublishReady;
+
+  useEffect(() => {
+    const player = videoRef.current;
+    if (!player) {
+      return;
+    }
+    player.currentTime = timelineStart;
+  }, [timelineStart, recordingVideo, selectedCandidateId]);
 
   return (
     <DashboardLayout>
@@ -80,13 +96,20 @@ const ClipsCandidatesPage = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[240px_1fr_280px]">
-          <CandidateList
-            items={candidateItems}
-            activeId={selectedCandidateId}
-            thumbnail={previewImage}
-            onSelect={setSelectedCandidateId}
-          />
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_1fr_280px]">
+          <div className="flex flex-col gap-4">
+            <CandidateList
+              items={candidateItems}
+              activeId={selectedCandidateId}
+              thumbnail={previewImage}
+              onSelect={setSelectedCandidateId}
+            />
+            <VideoPreview
+              src={recordingVideo}
+              title={clipTitle || "Recording preview"}
+              videoRef={videoRef}
+            />
+          </div>
 
           <div>
             {isLoading ? (

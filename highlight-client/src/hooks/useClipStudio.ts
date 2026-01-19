@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { getClipCandidates } from "@/services/api/clipCandidates";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { getClipCandidateThumbnail, getClipCandidates } from "@/services/api/clipCandidates";
 import { createClip, exportClip, getClipsByRecording } from "@/services/api/clips";
 import { createYoutubePublish, getYoutubePublishesByClip } from "@/services/api/youtubePublishes";
-import { getRecordingThumbnail, getRecordings } from "@/services/api/recordings";
+import { getRecordingThumbnail, getRecordingVideo, getRecordings } from "@/services/api/recordings";
 import { ClipCandidateApi } from "@/types/clipCandidates";
 import { ClipApi } from "@/types/clips";
 import { RecordingApi } from "@/types/recordings";
@@ -19,6 +19,7 @@ interface CandidateView {
   status: string;
   label: string;
   timeLabel: string;
+  thumbnailAvailable: boolean;
 }
 
 interface StudioState {
@@ -38,6 +39,7 @@ const toCandidateView = (candidate: ClipCandidateApi): CandidateView => {
     status: candidate.Status,
     label: `Candidate ${candidate.ID}`,
     timeLabel: `${formatSeconds(startSec)} - ${formatSeconds(endSec)}`,
+    thumbnailAvailable: Boolean(candidate.ThumbnailPath),
   };
 };
 
@@ -52,7 +54,10 @@ export const useClipStudio = () => {
   const [recordings, setRecordings] = useState<RecordingApi[]>([]);
   const [activeRecording, setActiveRecording] = useState<RecordingApi | null>(null);
   const [recordingThumbnail, setRecordingThumbnail] = useState<string | null>(null);
+  const [recordingVideo, setRecordingVideo] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<CandidateView[]>([]);
+  const [candidateThumbnails, setCandidateThumbnails] = useState<Record<number, string>>({});
+  const candidateThumbRef = useRef<Record<number, string>>({});
   const [clips, setClips] = useState<ClipApi[]>([]);
   const [publishes, setPublishes] = useState<YoutubePublishApi[]>([]);
   const [selectedCandidateId, setSelectedCandidateId] = useState<number | null>(null);
@@ -168,16 +173,70 @@ export const useClipStudio = () => {
       }
     };
 
+    const loadVideo = async (recording: RecordingApi) => {
+      try {
+        const url = await getRecordingVideo(recording.UUID);
+        if (isMounted) {
+          setRecordingVideo(url);
+        }
+      } catch {
+        if (isMounted) {
+          setRecordingVideo(null);
+        }
+      }
+    };
+
     if (activeRecording) {
       loadThumbnail(activeRecording);
+      loadVideo(activeRecording);
     } else {
       setRecordingThumbnail(null);
+      setRecordingVideo(null);
     }
 
     return () => {
       isMounted = false;
     };
   }, [activeRecording]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const cleanup = (items: Record<number, string>) => {
+      Object.values(items).forEach((url) => URL.revokeObjectURL(url));
+    };
+
+    const loadCandidateThumbnails = async () => {
+      const ids = candidates.filter((item) => item.thumbnailAvailable).map((item) => item.id);
+      if (ids.length === 0) {
+        cleanup(candidateThumbRef.current);
+        candidateThumbRef.current = {};
+        setCandidateThumbnails({});
+        return;
+      }
+
+      const results = await Promise.allSettled(ids.map((id) => getClipCandidateThumbnail(id)));
+      if (!isMounted) {
+        return;
+      }
+
+      const next: Record<number, string> = {};
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          next[ids[index]] = result.value;
+        }
+      });
+      cleanup(candidateThumbRef.current);
+      candidateThumbRef.current = next;
+      setCandidateThumbnails(next);
+    };
+
+    loadCandidateThumbnails();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [candidates]);
 
   useEffect(() => {
     if (!selectedCandidateId) {
@@ -330,6 +389,8 @@ export const useClipStudio = () => {
     activeRecording,
     setActiveRecording,
     recordingThumbnail,
+    recordingVideo,
+    candidateThumbnails,
     candidates,
     selectedCandidateId,
     setSelectedCandidateId,
