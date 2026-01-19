@@ -3,6 +3,7 @@ package recordings
 type CreateInput struct {
 	UserID       int64
 	Title        string
+	Game         string
 	OriginalName string
 	FileBytes    []byte
 }
@@ -10,6 +11,7 @@ type CreateInput struct {
 type RecordingDTO struct {
 	UUID            string `json:"uuid"`
 	Title           string `json:"title"`
+	Game            string `json:"game"`
 	OriginalName    string `json:"original_filename"`
 	StoragePath     string `json:"storage_path"`
 	DurationSeconds int    `json:"duration_seconds"`

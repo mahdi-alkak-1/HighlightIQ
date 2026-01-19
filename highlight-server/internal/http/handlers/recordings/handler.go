@@ -17,7 +17,7 @@ import (
 )
 
 type RecordingService interface {
-	Create(ctx context.Context, userID int64, title string, originalName string, fileBytes []byte) (recRepo.Recording, error)
+	Create(ctx context.Context, userID int64, title string, game string, originalName string, fileBytes []byte) (recRepo.Recording, error)
 	List(ctx context.Context, userID int64) ([]recRepo.Recording, error)
 	Get(ctx context.Context, userID int64, recUUID string) (recRepo.Recording, error)
 	UpdateTitle(ctx context.Context, userID int64, recUUID string, title string) error
@@ -58,6 +58,21 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	title := strings.TrimSpace(r.FormValue("title"))
+	gameRaw := strings.TrimSpace(r.FormValue("game"))
+	game := strings.ToLower(gameRaw)
+	var gameLabel string
+	switch game {
+	case "fortnite":
+		gameLabel = "Fortnite"
+	case "valorant":
+		gameLabel = "Valorant"
+	default:
+		response.JSON(w, http.StatusUnprocessableEntity, map[string]any{
+			"message": "validation error",
+			"errors":  map[string]string{"game": "game must be fortnite or valorant"},
+		})
+		return
+	}
 
 	b, err := io.ReadAll(file)
 	if err != nil {
@@ -65,7 +80,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rec, err := h.svc.Create(r.Context(), u.ID, title, header.Filename, b)
+	rec, err := h.svc.Create(r.Context(), u.ID, title, gameLabel, header.Filename, b)
 	if err != nil {
 		response.JSON(w, http.StatusInternalServerError, map[string]any{"message": "internal server error"})
 		return

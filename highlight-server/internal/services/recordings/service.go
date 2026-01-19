@@ -29,7 +29,7 @@ func New(repo *recRepo.Repo, baseDir string) *Service {
 	}
 }
 
-func (s *Service) Create(ctx context.Context, userID int64, title string, originalName string, fileBytes []byte) (recRepo.Recording, error) {
+func (s *Service) Create(ctx context.Context, userID int64, title string, game string, originalName string, fileBytes []byte) (recRepo.Recording, error) {
 	recUUID := uuid.NewString()
 
 	if title == "" {
@@ -51,6 +51,7 @@ func (s *Service) Create(ctx context.Context, userID int64, title string, origin
 		UUID:            recUUID,
 		UserID:          userID,
 		Title:           title,
+		Game:            game,
 		OriginalName:    originalName,
 		StoragePath:     fullPath,
 		DurationSeconds: 0,

@@ -1,0 +1,2 @@
+ALTER TABLE recordings
+  ADD COLUMN game VARCHAR(40) NOT NULL DEFAULT 'Fortnite' AFTER title;

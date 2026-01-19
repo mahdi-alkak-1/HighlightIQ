@@ -16,12 +16,12 @@ func New(db *sql.DB) *Repo {
 
 func (r *Repo) Create(ctx context.Context, p CreateParams) (Recording, error) {
 	const q = `
-		INSERT INTO recordings (uuid, user_id, title, original_filename, storage_path, duration_seconds, status)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO recordings (uuid, user_id, title, game, original_filename, storage_path, duration_seconds, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	res, err := r.db.ExecContext(ctx, q,
-		p.UUID, p.UserID, p.Title, p.OriginalName, p.StoragePath, p.DurationSeconds, p.Status,
+		p.UUID, p.UserID, p.Title, p.Game, p.OriginalName, p.StoragePath, p.DurationSeconds, p.Status,
 	)
 	if err != nil {
 		return Recording{}, err
@@ -39,7 +39,7 @@ func (r *Repo) Create(ctx context.Context, p CreateParams) (Recording, error) {
 func (r *Repo) GetByUUIDForUser(ctx context.Context, userID int64, recUUID string, fallbackID int64) (Recording, error) {
 	// If fallbackID is 0, ignore it; otherwise allow either match (helps Create return)
 	const q = `
-		SELECT id, uuid, user_id, title, original_filename, storage_path, duration_seconds, status, created_at, updated_at
+		SELECT id, uuid, user_id, title, game, original_filename, storage_path, duration_seconds, status, created_at, updated_at
 		FROM recordings
 		WHERE user_id = ?
 		  AND (uuid = ? OR (? <> 0 AND id = ?))
@@ -71,7 +71,7 @@ func (r *Repo) GetByUUIDForUser(ctx context.Context, userID int64, recUUID strin
 
 func (r *Repo) ListByUser(ctx context.Context, userID int64) ([]Recording, error) {
 	const q = `
-		SELECT id, uuid, user_id, title, original_filename, storage_path, duration_seconds, status, created_at, updated_at
+		SELECT id, uuid, user_id, title, game, original_filename, storage_path, duration_seconds, status, created_at, updated_at
 		FROM recordings
 		WHERE user_id = ?
 		ORDER BY created_at DESC
@@ -91,6 +91,7 @@ func (r *Repo) ListByUser(ctx context.Context, userID int64) ([]Recording, error
 			&rec.UUID,
 			&rec.UserID,
 			&rec.Title,
+			&rec.Game,
 			&rec.OriginalName,
 			&rec.StoragePath,
 			&rec.DurationSeconds,
@@ -110,7 +111,7 @@ func (r *Repo) ListByUser(ctx context.Context, userID int64) ([]Recording, error
 
 func (r *Repo) GetLatestByUser(ctx context.Context, userID int64) (Recording, error) {
 	const q = `
-		SELECT id, uuid, user_id, title, original_filename, storage_path, duration_seconds, status, created_at, updated_at
+		SELECT id, uuid, user_id, title, game, original_filename, storage_path, duration_seconds, status, created_at, updated_at
 		FROM recordings
 		WHERE user_id = ?
 		ORDER BY created_at DESC
@@ -123,6 +124,7 @@ func (r *Repo) GetLatestByUser(ctx context.Context, userID int64) (Recording, er
 		&rec.UUID,
 		&rec.UserID,
 		&rec.Title,
+		&rec.Game,
 		&rec.OriginalName,
 		&rec.StoragePath,
 		&rec.DurationSeconds,

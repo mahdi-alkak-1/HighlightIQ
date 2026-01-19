@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	clipsrepo "highlightiq-server/internal/repos/clips"
+	candidatesrepo "highlightiq-server/internal/repos/clipcandidates"
 	recordingsrepo "highlightiq-server/internal/repos/recordings"
 )
 

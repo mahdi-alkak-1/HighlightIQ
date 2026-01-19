@@ -12,6 +12,7 @@ type Recording struct {
 	UUID            string
 	UserID          int64
 	Title           string
+	Game            string
 	OriginalName    string
 	StoragePath     string
 	DurationSeconds int
@@ -24,6 +25,7 @@ type CreateParams struct {
 	UUID            string
 	UserID          int64
 	Title           string
+	Game            string
 	OriginalName    string
 	StoragePath     string
 	DurationSeconds int
