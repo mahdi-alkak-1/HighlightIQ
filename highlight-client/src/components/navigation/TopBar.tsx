@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import { DashboardRange } from "@/types/dashboard";
 
 interface TopBarProps {
@@ -6,6 +8,8 @@ interface TopBarProps {
 }
 
 const TopBar = ({ range, onRangeChange }: TopBarProps) => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -29,7 +33,11 @@ const TopBar = ({ range, onRangeChange }: TopBarProps) => {
             </option>
           </select>
         </label>
-        <button className="rounded-lg bg-brand-blue px-4 py-2 text-xs font-semibold text-white">
+        <button
+          type="button"
+          onClick={() => navigate("/recordings")}
+          className="rounded-lg bg-brand-blue px-4 py-2 text-xs font-semibold text-white"
+        >
           + Upload
         </button>
       </div>

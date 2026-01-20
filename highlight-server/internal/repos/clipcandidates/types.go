@@ -8,6 +8,7 @@ type Candidate struct {
 	StartMS      int
 	EndMS        int
 	Score        float64
+	ThumbnailPath *string
 	DetectedJSON *string // store raw JSON string (nullable)
 	Status       string
 
@@ -20,6 +21,7 @@ type CreateParams struct {
 	StartMS      int
 	EndMS        int
 	Score        float64
+	ThumbnailPath *string
 	DetectedJSON *string
 	Status       string
 }

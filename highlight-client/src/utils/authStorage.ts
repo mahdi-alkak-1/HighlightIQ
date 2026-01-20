@@ -14,7 +14,15 @@ export const clearAuthSession = () => {
 };
 
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem(TOKEN_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) {
+    return null;
+  }
+  if (isTokenExpired(token)) {
+    clearAuthSession();
+    return null;
+  }
+  return token;
 };
 
 export const getAuthUser = (): AuthUser | null => {
@@ -27,5 +35,22 @@ export const getAuthUser = (): AuthUser | null => {
     return JSON.parse(raw) as AuthUser;
   } catch {
     return null;
+  }
+};
+
+const isTokenExpired = (token: string): boolean => {
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    return true;
+  }
+  const payload = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+  try {
+    const decoded = JSON.parse(atob(payload)) as { exp?: number };
+    if (!decoded.exp) {
+      return true;
+    }
+    return Date.now() >= decoded.exp * 1000;
+  } catch {
+    return true;
   }
 };

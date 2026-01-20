@@ -33,6 +33,14 @@ highlightiq.env
 *.key
 
 # -------------------------
+# Frontend (highlight-client)
+# -------------------------
+../highlight-client/node_modules/
+../highlight-client/.vite/
+../highlight-client/node_modules/.vite/
+../highlight-client/dist/
+
+# -------------------------
 # OS / Editor
 # -------------------------
 .DS_Store
@@ -43,3 +51,4 @@ github_deploy_key
 github_deploy_key.pub
 .github_deploy_key
 .github_deploy_key.pub
+D:/recordings/candidate-thumbs/

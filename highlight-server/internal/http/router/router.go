@@ -53,6 +53,7 @@ func New(
 						r3.Patch("/", recordingsHandler.UpdateTitle)
 						r3.Delete("/", recordingsHandler.Delete)
 						r3.Get("/thumbnail", recordingsHandler.Thumbnail)
+						r3.Get("/video", recordingsHandler.Video)
 
 						// Nested clip candidates for a recording
 						if clipCandidatesHandler != nil {
@@ -70,6 +71,7 @@ func New(
 				pr.Route("/clip-candidates/{id}", func(cr chi.Router) {
 					cr.Patch("/", clipCandidatesHandler.UpdateStatus)
 					cr.Delete("/", clipCandidatesHandler.Delete)
+					cr.Get("/thumbnail", clipCandidatesHandler.Thumbnail)
 				})
 			}
 
@@ -84,6 +86,7 @@ func New(
 						r3.Patch("/", clipsHandler.Update)
 						r3.Delete("/", clipsHandler.Delete)
 						r3.Post("/export", clipsHandler.Export)
+						r3.Post("/publish", clipsHandler.Publish)
 						r3.Get("/download", clipsHandler.Download)
 						r3.Get("/thumbnail", clipsHandler.Thumbnail)
 

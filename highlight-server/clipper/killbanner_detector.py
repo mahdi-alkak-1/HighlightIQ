@@ -77,7 +77,7 @@ def detect_banner_events(video_path: str, req, cap, return_diagnostics: bool = F
     """
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
 
-    sample_fps = float(getattr(req, "sample_fps", 60.0) or 60.0)
+    sample_fps = float(getattr(req, "sample_fps", 20.0) or 20.0)
     step = max(1, int(round(fps / sample_fps)))
 
     # detection tuning

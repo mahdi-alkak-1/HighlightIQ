@@ -37,6 +37,28 @@ func (r *Repo) GetByEmail(ctx context.Context, email string) (User, error) {
 	return u, nil
 }
 
+func (r *Repo) GetByID(ctx context.Context, id int64) (User, error) {
+	const q = `
+		SELECT id, uuid, name, email, password_hash
+		FROM users
+		WHERE id = ?
+		LIMIT 1
+	`
+
+	var u User
+	err := r.db.QueryRowContext(ctx, q, id).Scan(
+		&u.ID, &u.UUID, &u.Name, &u.Email, &u.PasswordHash,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return User{}, ErrNotFound
+	}
+	if err != nil {
+		return User{}, err
+	}
+	return u, nil
+}
+
 func (r *Repo) Create(ctx context.Context, p CreateParams) (User, error) {
 	const q = `
 		INSERT INTO users (uuid, name, email, password_hash)

@@ -29,8 +29,8 @@ func (r *Repo) CreateMany(ctx context.Context, items []CreateParams) (int64, err
 	defer func() { _ = tx.Rollback() }()
 
 	const q = `
-		INSERT INTO clip_candidates (recording_id, start_ms, end_ms, score, detected_signals, status)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO clip_candidates (recording_id, start_ms, end_ms, score, thumbnail_path, detected_signals, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`
 
 	var inserted int64
@@ -39,7 +39,7 @@ func (r *Repo) CreateMany(ctx context.Context, items []CreateParams) (int64, err
 			it.Status = "new"
 		}
 		_, err := tx.ExecContext(ctx, q,
-			it.RecordingID, it.StartMS, it.EndMS, it.Score, it.DetectedJSON, it.Status,
+			it.RecordingID, it.StartMS, it.EndMS, it.Score, it.ThumbnailPath, it.DetectedJSON, it.Status,
 		)
 		if err != nil {
 			return 0, err
@@ -55,7 +55,7 @@ func (r *Repo) CreateMany(ctx context.Context, items []CreateParams) (int64, err
 
 func (r *Repo) ListByRecordingID(ctx context.Context, recordingID int64) ([]Candidate, error) {
 	const q = `
-		SELECT id, recording_id, start_ms, end_ms, score, detected_signals, status, created_at, updated_at
+		SELECT id, recording_id, start_ms, end_ms, score, thumbnail_path, detected_signals, status, created_at, updated_at
 		FROM clip_candidates
 		WHERE recording_id = ?
 		ORDER BY score DESC, start_ms ASC
@@ -71,14 +71,19 @@ func (r *Repo) ListByRecordingID(ctx context.Context, recordingID int64) ([]Cand
 	for rows.Next() {
 		var c Candidate
 		var detected sql.NullString
+		var thumb sql.NullString
 		if err := rows.Scan(
-			&c.ID, &c.RecordingID, &c.StartMS, &c.EndMS, &c.Score, &detected, &c.Status, &c.CreatedAt, &c.UpdatedAt,
+			&c.ID, &c.RecordingID, &c.StartMS, &c.EndMS, &c.Score, &thumb, &detected, &c.Status, &c.CreatedAt, &c.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
 		if detected.Valid {
 			s := detected.String
 			c.DetectedJSON = &s
+		}
+		if thumb.Valid {
+			s := thumb.String
+			c.ThumbnailPath = &s
 		}
 		out = append(out, c)
 	}
@@ -149,7 +154,7 @@ func (r *Repo) Delete(ctx context.Context, id int64) error {
 
 func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Candidate, error) {
 	const q = `
-		SELECT c.id, c.recording_id, c.start_ms, c.end_ms, c.score, c.detected_signals, c.status, c.created_at, c.updated_at
+		SELECT c.id, c.recording_id, c.start_ms, c.end_ms, c.score, c.thumbnail_path, c.detected_signals, c.status, c.created_at, c.updated_at
 		FROM clip_candidates c
 		JOIN recordings r ON r.id = c.recording_id
 		WHERE c.id = ? AND r.user_id = ?
@@ -158,8 +163,9 @@ func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Cand
 
 	var c Candidate
 	var detected sql.NullString
+	var thumb sql.NullString
 	err := r.db.QueryRowContext(ctx, q, id, userID).Scan(
-		&c.ID, &c.RecordingID, &c.StartMS, &c.EndMS, &c.Score, &detected, &c.Status, &c.CreatedAt, &c.UpdatedAt,
+		&c.ID, &c.RecordingID, &c.StartMS, &c.EndMS, &c.Score, &thumb, &detected, &c.Status, &c.CreatedAt, &c.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Candidate{}, ErrNotFound
@@ -171,6 +177,10 @@ func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Cand
 	if detected.Valid {
 		s := detected.String
 		c.DetectedJSON = &s
+	}
+	if thumb.Valid {
+		s := thumb.String
+		c.ThumbnailPath = &s
 	}
 	return c, nil
 }

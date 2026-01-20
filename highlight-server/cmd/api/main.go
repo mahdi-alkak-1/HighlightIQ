@@ -36,8 +36,25 @@ import (
 
 func main() {
 	cfg := config.Load()
+	log.Printf("DB host=%s port=%s name=%s user=%s", cfg.MySQL.Host, cfg.MySQL.Port, cfg.MySQL.Name, cfg.MySQL.User)
 
 	conn, err := db.NewMySQL(cfg.MySQL)
+	if err != nil {
+	log.Fatalf("DB connection failed: %v", err)
+	}
+
+	// DEBUG...
+	{
+	var uid int64
+	var status string
+	var exportPath *string
+	err := conn.QueryRow(`SELECT user_id, status, export_path FROM clips WHERE id = 106 LIMIT 1`).Scan(&uid, &status, &exportPath)
+	if err != nil {
+		log.Printf("DEBUG DB: clip 106 lookup error: %v", err)
+	} else {
+		log.Printf("DEBUG DB: clip 106 exists user_id=%d status=%s export_path=%v", uid, status, exportPath)
+	}
+	}
 	if err != nil {
 		log.Fatalf("DB connection failed: %v", err)
 	}
@@ -59,21 +76,21 @@ func main() {
 
 	clipsDir := os.Getenv("CLIPS_DIR")
 	if clipsDir == "" {
-		clipsDir = "/var/lib/highlightiq/clips"
+		clipsDir = "D:\\clips"
 	}
 
 	var publishNotifier clipssvc.PublishNotifier
 	if cfg.N8NPublishWebhookURL != "" {
-		publishNotifier = n8n.New(cfg.N8NPublishWebhookURL, cfg.N8NPublishWebhookAuth)
+		publishNotifier = n8n.New(cfg.N8NPublishWebhookURL, cfg.N8NWebhookSecret)
 	}
 
-	clipsService := clipssvc.New(clipsRepo, recRepo, clipCandidatesRepo, clipsDir, cfg.ClipsBaseURL, publishNotifier)
+	clipsService := clipssvc.New(clipsRepo, recRepo, clipCandidatesRepo, usersRepo, cfg.JWTSecret, clipsDir, cfg.ClipsBaseURL, publishNotifier)
 	youtubePublishesService := ypsvc.New(clipsRepo, ypRepo)
 	dashboardService := dashsvc.New(recRepo, clipCandidatesRepo, ypRepo)
 
 	// handlers
 	authHandler := authhandlers.New(authService)
-	recHandler := recordinghandlers.New(recService)
+	recHandler := recordinghandlers.New(recService, clipCandidatesService)
 	clipHandler := clipcandhandlers.New(clipCandidatesService)
 	clipsHandler := clipshandlers.New(clipsService)
 	youtubePublishesHandler := yphandlers.New(youtubePublishesService, cfg.N8NWebhookSecret)
@@ -84,6 +101,7 @@ func main() {
 
 	// router
 	r := router.New(authHandler, recHandler, clipHandler, clipsHandler, youtubePublishesHandler, dashboardHandler, jwtAuth.Middleware)
+	log.Println("API BUILD MARKER: DBG-CLIP-NOTFOUND-1")
 
 	log.Println("API listening on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
