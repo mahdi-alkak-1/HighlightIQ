@@ -21,7 +21,8 @@ const ClipsCandidatesPage = () => {
     timelineStart,
     timelineEnd,
     recordingDuration,
-    updateTimelineRange, // ✅ use atomic setter
+    updateTimelineStart,
+    updateTimelineEnd,
     clipTitle,
     setClipTitle,
     isGenerating,
@@ -38,8 +39,7 @@ const ClipsCandidatesPage = () => {
     errorMessage,
   } = useClipStudio();
 
-  const [captionStyle, setCaptionStyle] = useState("clean");
-  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [description, setDescription] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const previewImage =
@@ -59,10 +59,6 @@ const ClipsCandidatesPage = () => {
       })),
     [candidates, candidateThumbnails, previewImage]
   );
-
-  const toggleHashtag = (tag: string) => {
-    setHashtags((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]));
-  };
 
   const isGenerateDisabled = !selectedCandidateId || isGenerating || hasGeneratedClip;
   const isPublishDisabled = !selectedCandidateId || !isPublishReady;
@@ -96,13 +92,7 @@ const ClipsCandidatesPage = () => {
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_1fr_280px]">
           <div className="flex flex-col gap-4">
-            <CandidateList
-              items={candidateItems}
-              activeId={selectedCandidateId}
-              thumbnail={previewImage}
-              onSelect={setSelectedCandidateId}
-            />
-            <VideoPreview src={recordingVideo} title={clipTitle || "Recording preview"} videoRef={videoRef} />
+            <CandidateList items={candidateItems} activeId={selectedCandidateId} onSelect={setSelectedCandidateId} />
           </div>
 
           <div>
@@ -111,24 +101,26 @@ const ClipsCandidatesPage = () => {
                 Loading candidates...
               </div>
             ) : (
-              <PreviewPanel
-                start={timelineStart}
-                end={timelineEnd}
-                duration={timelineDuration}
-                maxDuration={maxClipDurationSeconds}
-                totalDuration={Math.max(1, recordingDuration)}
-                onRangeChange={updateTimelineRange} // ✅ single update
-              />
+              <div className="space-y-4">
+                <VideoPreview src={recordingVideo} title={clipTitle || "Recording preview"} videoRef={videoRef} />
+                <PreviewPanel
+                  start={timelineStart}
+                  end={timelineEnd}
+                  duration={timelineDuration}
+                  maxDuration={maxClipDurationSeconds}
+                  totalDuration={Math.max(1, recordingDuration)}
+                  onStartChange={updateTimelineStart}
+                  onEndChange={updateTimelineEnd}
+                />
+              </div>
             )}
           </div>
 
           <ClipDetailsPanel
             title={clipTitle}
             onTitleChange={setClipTitle}
-            captionStyle={captionStyle}
-            onCaptionStyleChange={setCaptionStyle}
-            hashtags={hashtags}
-            onHashtagToggle={toggleHashtag}
+            description={description}
+            onDescriptionChange={setDescription}
           />
         </div>
 
