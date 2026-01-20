@@ -21,8 +21,7 @@ const ClipsCandidatesPage = () => {
     timelineStart,
     timelineEnd,
     recordingDuration,
-    updateTimelineStart,
-    updateTimelineEnd,
+    updateTimelineRange, // ✅ use atomic setter
     clipTitle,
     setClipTitle,
     isGenerating,
@@ -47,6 +46,7 @@ const ClipsCandidatesPage = () => {
     (selectedCandidateId ? candidateThumbnails[selectedCandidateId] : null) ??
     recordingThumbnail ??
     "/images/register-hero.png";
+
   const timelineDuration = Math.max(1, Math.round(timelineEnd - timelineStart));
 
   const candidateItems = useMemo(
@@ -61,9 +61,7 @@ const ClipsCandidatesPage = () => {
   );
 
   const toggleHashtag = (tag: string) => {
-    setHashtags((prev) =>
-      prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]
-    );
+    setHashtags((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]));
   };
 
   const isGenerateDisabled = !selectedCandidateId || isGenerating || hasGeneratedClip;
@@ -104,11 +102,7 @@ const ClipsCandidatesPage = () => {
               thumbnail={previewImage}
               onSelect={setSelectedCandidateId}
             />
-            <VideoPreview
-              src={recordingVideo}
-              title={clipTitle || "Recording preview"}
-              videoRef={videoRef}
-            />
+            <VideoPreview src={recordingVideo} title={clipTitle || "Recording preview"} videoRef={videoRef} />
           </div>
 
           <div>
@@ -123,8 +117,7 @@ const ClipsCandidatesPage = () => {
                 duration={timelineDuration}
                 maxDuration={maxClipDurationSeconds}
                 totalDuration={Math.max(1, recordingDuration)}
-                onStartChange={updateTimelineStart}
-                onEndChange={updateTimelineEnd}
+                onRangeChange={updateTimelineRange} // ✅ single update
               />
             )}
           </div>
@@ -142,9 +135,7 @@ const ClipsCandidatesPage = () => {
         <PublishConnectionBar connected={publishConnected} onToggle={setPublishConnected} />
       </div>
 
-      {modalMessage && (
-        <PublishModal message={modalMessage} onClose={() => setModalMessage(null)} />
-      )}
+      {modalMessage && <PublishModal message={modalMessage} onClose={() => setModalMessage(null)} />}
     </DashboardLayout>
   );
 };

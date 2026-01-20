@@ -6,8 +6,7 @@ interface PreviewPanelProps {
   duration: number;
   maxDuration: number;
   totalDuration: number;
-  onStartChange: (value: number) => void;
-  onEndChange: (value: number) => void;
+  onRangeChange: (start: number, end: number) => void;
 }
 
 const PreviewPanel = ({
@@ -16,8 +15,7 @@ const PreviewPanel = ({
   duration,
   maxDuration,
   totalDuration,
-  onStartChange,
-  onEndChange,
+  onRangeChange,
 }: PreviewPanelProps) => {
   return (
     <TimelineEditor
@@ -26,8 +24,7 @@ const PreviewPanel = ({
       duration={duration}
       maxDuration={maxDuration}
       totalDuration={totalDuration}
-      onStartChange={onStartChange}
-      onEndChange={onEndChange}
+      onChange={onRangeChange}
     />
   );
 };

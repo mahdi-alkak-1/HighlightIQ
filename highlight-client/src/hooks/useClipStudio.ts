@@ -278,6 +278,28 @@ export const useClipStudio = () => {
   const hasGeneratedClip = Boolean(selectedClip?.export_path);
   const isPublishReady = Boolean(selectedClip && hasGeneratedClip);
 
+  // ✅ NEW: Atomic update for start+end (prevents left handle "snapping back")
+  const updateTimelineRange = (startSec: number, endSec: number) => {
+    const safeTotal = Math.max(1, recordingDuration);
+
+    let s = clamp(startSec, 0, Math.max(0, safeTotal - 1));
+    let e = clamp(endSec, s + 1, safeTotal);
+
+    // enforce max duration
+    if (e - s > maxClipDurationSeconds) {
+      e = Math.min(safeTotal, s + maxClipDurationSeconds);
+    }
+
+    // ensure at least 1s
+    if (e <= s) {
+      e = Math.min(safeTotal, s + 1);
+    }
+
+    setTimelineStart(s);
+    setTimelineEnd(e);
+  };
+
+  // Keep existing single setters if you still use them elsewhere
   const updateTimelineStart = (value: number) => {
     const safeStart = clamp(value, 0, Math.max(0, recordingDuration - 1));
     let safeEnd = timelineEnd;
@@ -402,6 +424,7 @@ export const useClipStudio = () => {
     recordingDuration,
     updateTimelineStart,
     updateTimelineEnd,
+    updateTimelineRange, // ✅ export new atomic function
     clipTitle,
     setClipTitle,
     isGenerating,

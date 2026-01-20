@@ -103,6 +103,17 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 			defer cancel()
 			_, _ = h.detector.DetectAndStore(ctx, userID, clipcand.DetectInput{
 				RecordingUUID: recUUID,
+				MaxClipSeconds: 60,
+				PreRollSeconds: 4,
+				PostRollSeconds: 3,
+				MinClipSeconds: 8,
+				SampleFPS: 20.0,
+				MinSpacingSeconds: 2,
+				MaxCandidates: 20,
+				MergeGapSeconds: 0,
+				ElimMatchThreshold: 0.6,
+				MinConsecutiveHits: 5,
+				CooldownSeconds: 1.2,
 			})
 		}()
 	}

@@ -14,11 +14,11 @@ class DetectKillsRequest(BaseModel):
     path: str
 
     max_clip_seconds: int = 60
-    pre_roll_seconds: int = 5
+    pre_roll_seconds: int = 4
     post_roll_seconds: int = 3
     min_clip_seconds: int = 8
 
-    sample_fps: float = 60.0
+    sample_fps: float = 20.0
     min_spacing_seconds: float = 1.2
     max_candidates: int = 20
 
