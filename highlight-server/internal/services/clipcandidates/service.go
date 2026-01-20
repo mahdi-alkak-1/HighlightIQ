@@ -82,7 +82,7 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 		in.PreRollSeconds = 0
 	}
 	if in.PreRollSeconds == 0 {
-		in.PreRollSeconds = 5
+		in.PreRollSeconds = 4
 	}
 	if in.PostRollSeconds < 0 {
 		in.PostRollSeconds = 0
@@ -94,9 +94,9 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 		in.MinClipSeconds = 8
 	}
 
-	// scanning: banner detector likes ~60 fps
+	// scanning default tuned to match clipper behavior you expect
 	if in.SampleFPS <= 0 {
-		in.SampleFPS = 60.0
+		in.SampleFPS = 15.0
 	}
 
 	if in.MaxCandidates <= 0 {
@@ -118,6 +118,12 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 		in.MergeGapSeconds = 0
 	}
 
+	if in.ElimMatchThreshold <= 0 {
+		in.ElimMatchThreshold = 0.6
+	}
+	if in.MinConsecutiveHits <= 0 {
+		in.MinConsecutiveHits = 5
+	}
 	if in.CooldownSeconds <= 0 {
 		in.CooldownSeconds = 1.2
 	}

@@ -97,10 +97,14 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 
 	if h.detector != nil {
 		recUUID := rec.UUID
+		recPath := rec.StoragePath
 		userID := u.ID
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 			defer cancel()
+			if err := waitForFileReady(ctx, recPath); err != nil {
+				return
+			}
 			_, _ = h.detector.DetectAndStore(ctx, userID, clipcand.DetectInput{
 				RecordingUUID: recUUID,
 				MaxClipSeconds: 60,
@@ -305,4 +309,45 @@ func (h *Handler) Video(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "video/mp4")
 	w.Header().Set("Content-Disposition", "inline; filename=\""+filepath.Base(rec.StoragePath)+"\"")
 	http.ServeContent(w, r, filepath.Base(rec.StoragePath), info.ModTime(), f)
+}
+
+func waitForFileReady(ctx context.Context, path string) error {
+	if strings.TrimSpace(path) == "" {
+		return errors.New("missing recording path")
+	}
+
+	const stableChecks = 2
+	const checkInterval = 2 * time.Second
+	const maxChecks = 30
+
+	var lastSize int64 = -1
+	stableCount := 0
+
+	for i := 0; i < maxChecks; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		info, err := os.Stat(path)
+		if err != nil {
+			time.Sleep(checkInterval)
+			continue
+		}
+
+		size := info.Size()
+		if size > 0 && size == lastSize {
+			stableCount++
+			if stableCount >= stableChecks {
+				return nil
+			}
+		} else {
+			stableCount = 0
+		}
+		lastSize = size
+		time.Sleep(checkInterval)
+	}
+
+	return errors.New("recording not ready")
 }

@@ -16,6 +16,7 @@ type DetectRequest struct {
 	PostRollSeconds   int     `json:"post_roll_seconds" validate:"omitempty,min=0,max=30"`
 	MinClipSeconds    int     `json:"min_clip_seconds" validate:"omitempty,min=1,max=60"`
 	SampleFPS         float64 `json:"sample_fps" validate:"omitempty,gt=0,lte=60"`
+	MaxCandidates     int     `json:"max_candidates" validate:"omitempty,min=1,max=100"`
 	MinSpacingSeconds float64 `json:"min_spacing_seconds" validate:"omitempty,gte=0,lte=120"`
 
 	MergeGapSeconds int `json:"merge_gap_seconds" validate:"omitempty,min=0,max=60"`

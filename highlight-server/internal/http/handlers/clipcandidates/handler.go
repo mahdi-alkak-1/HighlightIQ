@@ -51,6 +51,7 @@ func (h *Handler) Detect(w http.ResponseWriter, r *http.Request) {
 		PostRollSeconds:    req.PostRollSeconds,
 		MinClipSeconds:     req.MinClipSeconds,
 		SampleFPS:          req.SampleFPS,
+		MaxCandidates:      req.MaxCandidates,
 		MinSpacingSeconds:  req.MinSpacingSeconds,
 		MergeGapSeconds:    req.MergeGapSeconds,
 		ElimMatchThreshold: req.ElimMatchThreshold,
