@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"strings"
+	"log"
 )
 
 var ErrNotFound = errors.New("clips: not found")
@@ -48,6 +49,8 @@ func (r *Repo) Create(ctx context.Context, p CreateParams) (Clip, error) {
 }
 
 func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Clip, error) {
+	
+
 	const q = `
 		SELECT id, user_id, recording_id, candidate_id, title, caption, start_ms, end_ms, duration_seconds, status, export_path, thumbnail_path, created_at, updated_at
 		FROM clips
@@ -66,8 +69,19 @@ func (r *Repo) GetByIDForUser(ctx context.Context, userID int64, id int64) (Clip
 		&c.Status, &export, &thumbnail, &c.CreatedAt, &c.UpdatedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
+		// Diagnostic: does the clip exist at all in THIS DB connection?
+		var owner int64
+		err2 := r.db.QueryRowContext(ctx, `SELECT user_id FROM clips WHERE id = ? LIMIT 1`, id).Scan(&owner)
+		if errors.Is(err2, sql.ErrNoRows) {
+			log.Printf("DEBUG: clip id=%d not found in DB instance the API is using", id)
+		} else if err2 == nil {
+			log.Printf("DEBUG: clip id=%d exists but belongs to user_id=%d (API asked for user_id=%d)", id, owner, userID)
+		} else {
+			log.Printf("DEBUG: fallback owner lookup failed: %v", err2)
+		}
 		return Clip{}, ErrNotFound
 	}
+
 	if err != nil {
 		return Clip{}, err
 	}
@@ -258,7 +272,22 @@ func (r *Repo) UpdateByIDForUser(ctx context.Context, userID int64, id int64, p 
 		return Clip{}, err
 	}
 	if aff == 0 {
-		return Clip{}, ErrNotFound
+		var owner int64
+		err2 := r.db.QueryRowContext(ctx, `SELECT user_id FROM clips WHERE id = ? LIMIT 1`, id).Scan(&owner)
+		if errors.Is(err2, sql.ErrNoRows) {
+			log.Printf("DEBUG: update clip id=%d not found in DB instance the API is using", id)
+			return Clip{}, ErrNotFound
+		}
+		if err2 != nil {
+			log.Printf("DEBUG: update clip id=%d owner lookup failed: %v", id, err2)
+			return Clip{}, err2
+		}
+		if owner != userID {
+			log.Printf("DEBUG: update clip id=%d exists but belongs to user_id=%d (API asked for user_id=%d)", id, owner, userID)
+			return Clip{}, ErrNotFound
+		}
+		// No-op update (values unchanged); return current clip.
+		return r.GetByIDForUser(ctx, userID, id)
 	}
 
 	// Recompute duration if start/end changed

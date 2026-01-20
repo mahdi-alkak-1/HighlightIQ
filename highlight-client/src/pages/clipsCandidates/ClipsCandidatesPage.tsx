@@ -25,10 +25,12 @@ const ClipsCandidatesPage = () => {
     updateTimelineEnd,
     clipTitle,
     setClipTitle,
+    selectedClip,
     isGenerating,
     isPublishing,
     publishConnected,
     setPublishConnected,
+    publishRequested,
     modalMessage,
     setModalMessage,
     hasGeneratedClip,
@@ -61,7 +63,7 @@ const ClipsCandidatesPage = () => {
   );
 
   const isGenerateDisabled = !selectedCandidateId || isGenerating || hasGeneratedClip;
-  const isPublishDisabled = !selectedCandidateId || !isPublishReady;
+  const isPublishDisabled = !selectedCandidateId || !isPublishReady || publishRequested;
 
   useEffect(() => {
     const player = videoRef.current;
@@ -70,6 +72,10 @@ const ClipsCandidatesPage = () => {
     }
     player.currentTime = timelineStart;
   }, [timelineStart, recordingVideo, selectedCandidateId]);
+
+  useEffect(() => {
+    setDescription(selectedClip?.caption ?? "");
+  }, [selectedClip?.id]);
 
   return (
     <DashboardLayout>
@@ -80,8 +86,14 @@ const ClipsCandidatesPage = () => {
           isGenerating={isGenerating}
           isPublishing={isPublishing}
           hasGeneratedClip={hasGeneratedClip}
-          onGenerate={handleGenerate}
-          onPublish={handlePublish}
+          onGenerate={() => handleGenerate(description)}
+          onPublish={() =>
+            handlePublish({
+              title: clipTitle || "Clip Title",
+              description: description.trim(),
+              privacyStatus: "unlisted",
+            })
+          }
         />
 
         {errorMessage && (

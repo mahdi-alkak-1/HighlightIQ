@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
+	"log"
 	"github.com/go-chi/chi/v5"
 
 	"highlightiq-server/internal/http/middleware"
@@ -337,8 +337,15 @@ func normalizeAnalytics(raw *json.RawMessage) *string {
 }
 
 func (h *Handler) checkSecret(r *http.Request) bool {
+	got := r.Header.Get("X-N8N-SECRET")
+
+	// TEMP DEBUG
+	log.Printf("checkSecret: expected_len=%d got_len=%d got=%q",
+		len(h.secret), len(got), got,
+	)
+
 	if h.secret == "" {
 		return false
 	}
-	return r.Header.Get("X-N8N-SECRET") == h.secret
+	return got == h.secret
 }

@@ -11,10 +11,15 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
+	"highlightiq-server/internal/integrations/n8n"
 	clipsrepo "highlightiq-server/internal/repos/clips"
 	candidatesrepo "highlightiq-server/internal/repos/clipcandidates"
 	recordingsrepo "highlightiq-server/internal/repos/recordings"
+	"highlightiq-server/internal/repos/users"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 var ErrNotFound = errors.New("clips: not found")
@@ -25,16 +30,21 @@ type Service struct {
 	clipsRepo      *clipsrepo.Repo
 	recordingsRepo *recordingsrepo.Repo
 	candidatesRepo *candidatesrepo.Repo
+	usersRepo      *users.Repo
 	clipsDir       string
 	ffmpegPath     string
 	notifier       PublishNotifier
 	clipsBaseURL   string
+	jwtSecret      []byte
+	tokenTTL       time.Duration
 }
 
 func New(
 	clipsRepo *clipsrepo.Repo,
 	recordingsRepo *recordingsrepo.Repo,
 	candidatesRepo *candidatesrepo.Repo,
+	usersRepo *users.Repo,
+	jwtSecret string,
 	clipsDir string,
 	clipsBaseURL string,
 	notifier PublishNotifier,
@@ -43,10 +53,13 @@ func New(
 		clipsRepo:      clipsRepo,
 		recordingsRepo: recordingsRepo,
 		candidatesRepo: candidatesRepo,
+		usersRepo:      usersRepo,
 		clipsDir:       clipsDir,
 		ffmpegPath:     resolveFFmpegPath(),
 		notifier:       notifier,
 		clipsBaseURL:   clipsBaseURL,
+		jwtSecret:      []byte(jwtSecret),
+		tokenTTL:       24 * time.Hour,
 	}
 }
 
@@ -157,6 +170,12 @@ type UpdateInput struct {
 	ThumbnailPath *string
 }
 
+type PublishInput struct {
+	Title         *string
+	Description   *string
+	PrivacyStatus *string
+}
+
 func (s *Service) Update(ctx context.Context, userID int64, id int64, in UpdateInput) (clipsrepo.Clip, error) {
 	if in.StartMS != nil && in.EndMS != nil && *in.EndMS <= *in.StartMS {
 		return clipsrepo.Clip{}, ErrBadInput
@@ -265,7 +284,11 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 	}
 
 	outPath := filepath.Join(s.clipsDir, fmt.Sprintf("clip_%d.mp4", c.ID))
-	thumbPath := filepath.Join(s.clipsDir, fmt.Sprintf("clip_%d_thumb.jpg", c.ID))
+	thumbDir := filepath.Join(s.clipsDir, "clip_thumbnail")
+	if err := os.MkdirAll(thumbDir, 0755); err != nil {
+		return clipsrepo.Clip{}, err
+	}
+	thumbPath := filepath.Join(thumbDir, fmt.Sprintf("clip_%d_thumb.jpg", c.ID))
 
 	startSec := float64(c.StartMS) / 1000.0
 	durSec := float64(c.EndMS-c.StartMS) / 1000.0
@@ -334,6 +357,80 @@ func (s *Service) Export(ctx context.Context, userID int64, id int64) (clipsrepo
 	}
 
 	return updated, nil
+}
+
+func (s *Service) Publish(ctx context.Context, userID int64, id int64, in PublishInput) error {
+	c, err := s.clipsRepo.GetByIDForUser(ctx, userID, id)
+	if err != nil {
+		if errors.Is(err, clipsrepo.ErrNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+
+	if c.ExportPath == nil || *c.ExportPath == "" || c.Status != "ready" {
+		return ErrNotReady
+	}
+
+	if in.Title != nil || in.Description != nil {
+		_, err = s.clipsRepo.UpdateByIDForUser(ctx, userID, id, clipsrepo.UpdateParams{
+			Title:   in.Title,
+			Caption: in.Description,
+		})
+		if err != nil {
+			return err
+		}
+		if in.Title != nil {
+			c.Title = *in.Title
+		}
+		if in.Description != nil {
+			c.Caption = in.Description
+		}
+	}
+
+	if s.notifier == nil {
+		return nil
+	}
+
+	base := strings.TrimRight(s.clipsBaseURL, "/")
+	if base == "" {
+		base = "http://127.0.0.1:8080"
+	}
+	clipURL := fmt.Sprintf("%s/clips/%d/download", base, c.ID)
+
+	var accessToken *string
+	if s.usersRepo != nil && len(s.jwtSecret) > 0 {
+		u, err := s.usersRepo.GetByID(ctx, userID)
+		if err == nil {
+			if token, err := s.signJWT(u.UUID, u.Email); err == nil {
+				accessToken = &token
+			}
+		}
+	}
+
+	payload := n8n.PublishPayload{
+		UserID:        userID,
+		ClipID:        c.ID,
+		ClipURL:       clipURL,
+		Title:         c.Title,
+		Description:   c.Caption,
+		PrivacyStatus: in.PrivacyStatus,
+		AccessToken:   accessToken,
+	}
+
+	return s.notifier.NotifyClipPublish(ctx, payload)
+}
+
+func (s *Service) signJWT(userUUID, email string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub":   userUUID,
+		"email": email,
+		"iat":   time.Now().Unix(),
+		"exp":   time.Now().Add(s.tokenTTL).Unix(),
+	}
+
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return t.SignedString(s.jwtSecret)
 }
 
 func (s *Service) buildClipURL(exportPath *string) string {

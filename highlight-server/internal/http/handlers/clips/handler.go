@@ -245,6 +245,55 @@ func (h *Handler) Export(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, clip)
 }
 
+// POST /clips/{id}/publish
+func (h *Handler) Publish(w http.ResponseWriter, r *http.Request) {
+	u, ok := middleware.GetAuthUser(r.Context())
+	
+
+	if !ok {
+		response.JSON(w, http.StatusUnauthorized, messageResponse{Message: "unauthorized"})
+		return
+	}
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, messageResponse{Message: "invalid id"})
+		return
+	}
+
+	var req reqs.PublishRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.JSON(w, http.StatusBadRequest, messageResponse{Message: "invalid JSON payload"})
+		return
+	}
+	if err := req.Validate(); err != nil {
+		response.JSON(w, http.StatusBadRequest, messageResponse{Message: "validation failed"})
+		return
+	}
+
+	err = h.svc.Publish(r.Context(), u.ID, id, svc.PublishInput{
+		Title:         req.Title,
+		Description:   req.Description,
+		PrivacyStatus: req.PrivacyStatus,
+	})
+	if err != nil {
+		
+		if err == svc.ErrNotFound {
+			response.JSON(w, http.StatusNotFound, messageResponse{Message: "not found"})
+			return
+		}
+		if err == svc.ErrNotReady {
+			response.JSON(w, http.StatusConflict, messageResponse{Message: "clip not ready"})
+			return
+		}
+		response.JSON(w, http.StatusInternalServerError, messageResponse{Message: err.Error()})
+		return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]string{"message": "ok"})
+}
+
 // GET /clips/{id}/download
 func (h *Handler) Download(w http.ResponseWriter, r *http.Request) {
 	u, ok := middleware.GetAuthUser(r.Context())

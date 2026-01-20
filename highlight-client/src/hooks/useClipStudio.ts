@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getClipCandidateThumbnail, getClipCandidates } from "@/services/api/clipCandidates";
-import { createClip, exportClip, getClipsByRecording } from "@/services/api/clips";
-import { createYoutubePublish, getYoutubePublishesByClip } from "@/services/api/youtubePublishes";
+import { createClip, exportClip, getClipsByRecording, publishClip, updateClip } from "@/services/api/clips";
+import { getYoutubePublishesByClip } from "@/services/api/youtubePublishes";
 import { getRecordingThumbnail, getRecordingVideo, getRecordings } from "@/services/api/recordings";
 import { ClipCandidateApi } from "@/types/clipCandidates";
 import { ClipApi } from "@/types/clips";
@@ -66,6 +66,7 @@ export const useClipStudio = () => {
   const [clipTitle, setClipTitle] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publishRequested, setPublishRequested] = useState(false);
   const [publishConnected, setPublishConnected] = useState(true);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
   const [state, setState] = useState<StudioState>({
@@ -326,7 +327,7 @@ export const useClipStudio = () => {
     setTimelineEnd(safeEnd);
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (description: string) => {
     if (!activeRecording || !selectedCandidate) {
       return;
     }
@@ -341,11 +342,18 @@ export const useClipStudio = () => {
           recording_uuid: activeRecording.UUID,
           candidate_id: selectedCandidate.id,
           title: clipTitle || selectedCandidate.label,
-          caption: null,
+          caption: description ? description : null,
           start_ms: Math.round(timelineStart * 1000),
           end_ms: Math.round(timelineEnd * 1000),
         });
         setClips((prev) => [clip, ...prev]);
+      } else if (description && clip.caption !== description) {
+        const updated = await updateClip(clip.id, {
+          title: clipTitle || selectedCandidate.label,
+          caption: description,
+        });
+        clip = updated;
+        setClips((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
       }
       if (!clip.export_path) {
         const exported = await exportClip(clip.id);
@@ -356,7 +364,7 @@ export const useClipStudio = () => {
     }
   };
 
-  const handlePublish = async () => {
+  const handlePublish = async (input: { title: string; description: string; privacyStatus: "public" | "unlisted" | "private" }) => {
     if (!selectedClip) {
       setModalMessage("Please select a clip to publish.");
       return;
@@ -373,17 +381,20 @@ export const useClipStudio = () => {
       setModalMessage("This clip is already queued for YouTube.");
       return;
     }
+    if (publishRequested) {
+      setModalMessage("Publish request already sent.");
+      return;
+    }
     setIsPublishing(true);
     try {
-      const suffix = `${selectedClip.id}`.slice(0, 12);
-      const youtubeId = `pending-${suffix}`;
-      const youtubeUrl = `https://youtube.com/shorts/${youtubeId}`;
-      const created = await createYoutubePublish(selectedClip.id, {
-        youtube_video_id: youtubeId,
-        youtube_url: youtubeUrl,
-        status: "queued",
+      const trimmedDescription = input.description.trim();
+      await publishClip(selectedClip.id, {
+        title: input.title,
+        ...(trimmedDescription ? { description: trimmedDescription } : {}),
+        privacy_status: input.privacyStatus,
       });
-      setPublishes((prev) => [created, ...prev]);
+      setPublishRequested(true);
+      setModalMessage("Publish request sent to workflow.");
     } finally {
       setIsPublishing(false);
     }
@@ -401,8 +412,10 @@ export const useClipStudio = () => {
   useEffect(() => {
     if (!selectedClip) {
       setPublishes([]);
+      setPublishRequested(false);
       return;
     }
+    setPublishRequested(false);
     refreshPublishes();
   }, [selectedClip?.id]);
 
@@ -431,6 +444,7 @@ export const useClipStudio = () => {
     isPublishing,
     publishConnected,
     setPublishConnected,
+    publishRequested,
     modalMessage,
     setModalMessage,
     hasGeneratedClip,

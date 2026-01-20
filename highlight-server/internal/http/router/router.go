@@ -86,6 +86,7 @@ func New(
 						r3.Patch("/", clipsHandler.Update)
 						r3.Delete("/", clipsHandler.Delete)
 						r3.Post("/export", clipsHandler.Export)
+						r3.Post("/publish", clipsHandler.Publish)
 						r3.Get("/download", clipsHandler.Download)
 						r3.Get("/thumbnail", clipsHandler.Thumbnail)
 

@@ -35,6 +35,34 @@ export const exportClip = async (clipId: number) => {
   });
 };
 
+interface UpdateClipInput {
+  title?: string;
+  caption?: string | null;
+  start_ms?: number;
+  end_ms?: number;
+  status?: "draft" | "ready" | "published" | "failed";
+}
+
+export const updateClip = async (clipId: number, input: UpdateClipInput) => {
+  return request<ClipApi>(`/clips/${clipId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+};
+
+interface PublishClipInput {
+  title?: string;
+  description?: string;
+  privacy_status?: "public" | "unlisted" | "private";
+}
+
+export const publishClip = async (clipId: number, input: PublishClipInput) => {
+  return request<{ message: string }>(`/clips/${clipId}/publish`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+};
+
 export const getClipThumbnail = async (clipId: number): Promise<string> => {
   const token = getAuthToken();
   const response = await fetch(`/clips/${clipId}/thumbnail`, {
