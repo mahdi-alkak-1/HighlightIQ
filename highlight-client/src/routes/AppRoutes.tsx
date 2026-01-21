@@ -5,6 +5,7 @@ import DashboardPage from "@/pages/dashboard/DashboardPage";
 import RecordingsPage from "@/pages/recordings/RecordingsPage";
 import ClipsCandidatesPage from "@/pages/ClipsCandidatesPage";
 import ClipsLibraryPage from "@/pages/ClipsLibraryPage";
+import AnalyticsPage from "@/pages/AnalyticsPage";
 
 const AppRoutes = () => {
   return (
@@ -16,6 +17,7 @@ const AppRoutes = () => {
       <Route path="/recordings" element={<RecordingsPage />} />
       <Route path="/clips-candidates" element={<ClipsCandidatesPage />} />
       <Route path="/clips-library" element={<ClipsLibraryPage />} />
+      <Route path="/analytics" element={<AnalyticsPage />} />
       <Route path="*" element={<Navigate to="/register" replace />} />
     </Routes>
   );
