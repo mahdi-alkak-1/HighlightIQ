@@ -323,3 +323,24 @@ func (r *Repo) DeleteByIDForUser(ctx context.Context, userID int64, id int64) er
 	}
 	return nil
 }
+
+func (r *Repo) UpdateStatusByID(ctx context.Context, id int64, status string) error {
+	const q = `
+		UPDATE clips
+		SET status = ?
+		WHERE id = ?
+		LIMIT 1
+	`
+	res, err := r.db.ExecContext(ctx, q, status, id)
+	if err != nil {
+		return err
+	}
+	aff, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if aff == 0 {
+		return ErrNotFound
+	}
+	return nil
+}

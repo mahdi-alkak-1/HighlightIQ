@@ -6,6 +6,7 @@ import (
   "encoding/json"
   "fmt"
   "io"
+  "log"
   "net/http"
   "strings"
   "time"
@@ -43,6 +44,11 @@ type PublishPayload struct {
 
 func (c *Client) NotifyClipExported(ctx context.Context, clip clipsrepo.Clip, clipURL string) error {
   if c == nil || c.webhookURL == "" {
+    if c == nil {
+      log.Printf("n8n notify skipped: client is nil")
+    } else {
+      log.Printf("n8n notify skipped: webhook url is empty")
+    }
     return nil
   }
 
@@ -90,6 +96,11 @@ func (c *Client) NotifyClipExported(ctx context.Context, clip clipsrepo.Clip, cl
 
 func (c *Client) NotifyClipPublish(ctx context.Context, payload PublishPayload) error {
   if c == nil || c.webhookURL == "" {
+    if c == nil {
+      log.Printf("n8n publish skipped: client is nil")
+    } else {
+      log.Printf("n8n publish skipped: webhook url is empty")
+    }
     return nil
   }
 
@@ -102,6 +113,7 @@ func (c *Client) NotifyClipPublish(ctx context.Context, payload PublishPayload) 
   if err != nil {
     return fmt.Errorf("create n8n request: %w", err)
   }
+  log.Printf("n8n publish request: url=%s clip_id=%d", c.webhookURL, payload.ClipID)
   req.Header.Set("Content-Type", "application/json")
   if c.webhookSecret != "" {
     req.Header.Set("N8N_WEBHOOK_SECRET", c.webhookSecret)
