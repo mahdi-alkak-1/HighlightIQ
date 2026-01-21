@@ -23,8 +23,14 @@ const ClipsLibraryPage = () => {
   const currentPage = Math.min(page, pageCount);
   const pageStart = (currentPage - 1) * clipLibraryPageSize;
   const pageEnd = Math.min(pageStart + clipLibraryPageSize, items.length);
-  const pageItems = items.slice(pageStart, pageEnd);
-  const rangeLabel = items.length === 0 ? "Showing 0 of 0 clips" : `Showing ${pageStart + 1}-${pageEnd} of ${items.length} clips`;
+  const pageItems = useMemo(() => items.slice(pageStart, pageEnd), [items, pageStart, pageEnd]);
+  const rangeLabel = useMemo(
+    () =>
+      items.length === 0
+        ? "Showing 0 of 0 clips"
+        : `Showing ${pageStart + 1}-${pageEnd} of ${items.length} clips`,
+    [items.length, pageStart, pageEnd]
+  );
 
   useEffect(() => {
     if (page > pageCount) {
@@ -39,7 +45,7 @@ const ClipsLibraryPage = () => {
     };
 
     const loadThumbs = async () => {
-      const ids = pageItems.filter((item) => item.thumbnailAvailable).map((item) => item.id);
+      const ids = items.slice(pageStart, pageEnd).filter((item) => item.thumbnailAvailable).map((item) => item.id);
       if (ids.length === 0) {
         cleanup(thumbnailsRef.current);
         thumbnailsRef.current = {};
@@ -68,7 +74,7 @@ const ClipsLibraryPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [pageItems]);
+  }, [items, pageStart, pageEnd]);
 
   const filteredCount = useMemo(() => items.length, [items.length]);
 
