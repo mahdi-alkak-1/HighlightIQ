@@ -14,9 +14,9 @@ const PublishConnectionBar = ({ connected, onToggle }: PublishConnectionBarProps
           </svg>
         </div>
         <div>
-          <p className="text-sm font-semibold text-white">Publishing to YouTube Shorts</p>
+          <p className="text-sm font-semibold text-white">Publishing to YouTube</p>
           <p className="text-xs text-white/50">
-            {connected ? "Channel: HighlightIQ Gaming" : "Disconnected"}
+            {connected ? "Channel: Mahdi Alkak" : "Disconnected"}
           </p>
         </div>
         <span
@@ -27,8 +27,7 @@ const PublishConnectionBar = ({ connected, onToggle }: PublishConnectionBarProps
           {connected ? "CONNECTED" : "OFF"}
         </span>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="text-xs text-white/50">Export file only</span>
+      <div className="flex items-center">
         <button
           type="button"
           onClick={() => onToggle(!connected)}
@@ -41,9 +40,6 @@ const PublishConnectionBar = ({ connected, onToggle }: PublishConnectionBarProps
               connected ? "right-1" : "left-1"
             }`}
           />
-        </button>
-        <button type="button" className="text-xs font-semibold text-brand-link">
-          Change Settings
         </button>
       </div>
     </div>
