@@ -43,20 +43,18 @@ const ClipsLibraryRow = ({ item, thumbnail }: ClipsLibraryRowProps) => {
         <div className="flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-3 w-3">
             <path
-              d="M15 8.5c0 1.5-1.6 2.7-3 2.7S9 10 9 8.5 10.6 6 12 6s3 1.2 3 2.5Z"
+              d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"
               strokeWidth="1.5"
             />
-            <path d="M4 18c1.7-3.2 5-5 8-5s6.3 1.8 8 5" strokeWidth="1.5" />
+            <circle cx="12" cy="12" r="3" strokeWidth="1.5" />
           </svg>
           {formatCount(item.views)}
         </div>
         <div className="flex items-center gap-2">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-3 w-3">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3">
             <path
-              d="M8 11v9m0-9H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2h2v9"
-              strokeWidth="1.5"
+              d="M2 10.8c0-.9.7-1.6 1.6-1.6h3.2c.5 0 .9-.3 1.1-.7l1.6-4.1c.3-.8 1.1-1.3 2-1.3h.3c.7 0 1.3.6 1.3 1.3V8h4.6c1.4 0 2.5 1.2 2.2 2.6l-1.2 6.2c-.2 1-1.1 1.7-2.2 1.7H7.1c-.6 0-1.1-.2-1.6-.5l-2.7-1.8c-.5-.3-.8-.9-.8-1.5V10.8Z"
             />
-            <path d="M12 13h6a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-6" strokeWidth="1.5" />
           </svg>
           {formatCount(item.likes)}
         </div>
