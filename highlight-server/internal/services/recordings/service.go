@@ -2,8 +2,13 @@ package recordings
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"regexp"
+	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +21,7 @@ type Service struct {
 	repo     *recRepo.Repo
 	baseDir  string
 	maxBytes int64
+	ffmpegPath string
 }
 
 func New(repo *recRepo.Repo, baseDir string) *Service {
@@ -26,10 +32,11 @@ func New(repo *recRepo.Repo, baseDir string) *Service {
 		repo:     repo,
 		baseDir:  baseDir,
 		maxBytes: 1_000_000_000, // 1GB
+		ffmpegPath: resolveFFmpegPath(),
 	}
 }
 
-func (s *Service) Create(ctx context.Context, userID int64, title string, originalName string, fileBytes []byte) (recRepo.Recording, error) {
+func (s *Service) Create(ctx context.Context, userID int64, title string, game string, originalName string, fileBytes []byte) (recRepo.Recording, error) {
 	recUUID := uuid.NewString()
 
 	if title == "" {
@@ -47,18 +54,35 @@ func (s *Service) Create(ctx context.Context, userID int64, title string, origin
 		return recRepo.Recording{}, err
 	}
 
+	durationSeconds, err := s.getVideoDurationSeconds(ctx, fullPath)
+	if err != nil {
+		_ = os.Remove(fullPath)
+		return recRepo.Recording{}, err
+	}
+
+	thumbnailPath, err := s.generateThumbnail(ctx, fullPath, recUUID)
+	if err != nil {
+		_ = os.Remove(fullPath)
+		return recRepo.Recording{}, err
+	}
+
 	rec, err := s.repo.Create(ctx, recRepo.CreateParams{
 		UUID:            recUUID,
 		UserID:          userID,
 		Title:           title,
+		Game:            game,
 		OriginalName:    originalName,
 		StoragePath:     fullPath,
-		DurationSeconds: 0,
+		ThumbnailPath:   thumbnailPath,
+		DurationSeconds: durationSeconds,
 		Status:          "uploaded",
 	})
 	if err != nil {
 		// If DB insert fails, clean up the saved file
 		_ = os.Remove(fullPath)
+		if thumbnailPath != "" {
+			_ = os.Remove(thumbnailPath)
+		}
 		return recRepo.Recording{}, err
 	}
 
@@ -112,6 +136,104 @@ func filenameNoExt(name string) string {
 	base := filepath.Base(name)
 	ext := filepath.Ext(base)
 	return strings.TrimSuffix(base, ext)
+}
+
+func resolveFFmpegPath() string {
+	if v := strings.TrimSpace(os.Getenv("FFMPEG_PATH")); v != "" {
+		if st, err := os.Stat(v); err == nil && st.IsDir() {
+			if runtime.GOOS == "windows" {
+				return filepath.Join(v, "ffmpeg.exe")
+			}
+			return filepath.Join(v, "ffmpeg")
+		}
+		return v
+	}
+
+	if p, err := exec.LookPath("ffmpeg"); err == nil {
+		return p
+	}
+	if runtime.GOOS == "windows" {
+		if p, err := exec.LookPath("ffmpeg.exe"); err == nil {
+			return p
+		}
+	}
+	return "ffmpeg"
+}
+
+func (s *Service) generateThumbnail(ctx context.Context, videoPath string, recUUID string) (string, error) {
+	if s.ffmpegPath == "ffmpeg" || s.ffmpegPath == "ffmpeg.exe" {
+		s.ffmpegPath = resolveFFmpegPath()
+	}
+	if strings.EqualFold(filepath.Base(s.ffmpegPath), "ffmpeg") || strings.EqualFold(filepath.Base(s.ffmpegPath), "ffmpeg.exe") {
+		if _, err := exec.LookPath(s.ffmpegPath); err != nil && !filepath.IsAbs(s.ffmpegPath) {
+			return "", fmt.Errorf("ffmpeg not found: %w", err)
+		}
+	}
+
+	thumbDir := `D:\recordings\images`
+	if err := os.MkdirAll(thumbDir, 0o755); err != nil {
+		return "", err
+	}
+
+	outPath := filepath.Join(thumbDir, recUUID+".jpg")
+	cmd := exec.CommandContext(ctx, s.ffmpegPath,
+		"-hide_banner",
+		"-loglevel", "error",
+		"-y",
+		"-ss", "0",
+		"-i", videoPath,
+		"-frames:v", "1",
+		"-q:v", "2",
+		outPath,
+	)
+	cmd.Env = os.Environ()
+
+	out, runErr := cmd.CombinedOutput()
+	if runErr != nil {
+		msg := strings.TrimSpace(string(out))
+		if msg == "" {
+			msg = runErr.Error()
+		}
+		return "", fmt.Errorf("thumbnail generation failed: %s", msg)
+	}
+
+	return outPath, nil
+}
+
+func (s *Service) getVideoDurationSeconds(ctx context.Context, videoPath string) (int, error) {
+	if s.ffmpegPath == "ffmpeg" || s.ffmpegPath == "ffmpeg.exe" {
+		s.ffmpegPath = resolveFFmpegPath()
+	}
+	if strings.EqualFold(filepath.Base(s.ffmpegPath), "ffmpeg") || strings.EqualFold(filepath.Base(s.ffmpegPath), "ffmpeg.exe") {
+		if _, err := exec.LookPath(s.ffmpegPath); err != nil && !filepath.IsAbs(s.ffmpegPath) {
+			return 0, fmt.Errorf("ffmpeg not found: %w", err)
+		}
+	}
+
+	cmd := exec.CommandContext(ctx, s.ffmpegPath,
+		"-hide_banner",
+		"-i", videoPath,
+		"-f", "null",
+		"-",
+	)
+	cmd.Env = os.Environ()
+
+	output, err := cmd.CombinedOutput()
+	if err != nil && len(output) == 0 {
+		return 0, err
+	}
+
+	// ffmpeg prints duration in stderr output like: Duration: 00:10:15.12
+	re := regexp.MustCompile(`Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2})`)
+	matches := re.FindStringSubmatch(string(output))
+	if len(matches) != 4 {
+		return 0, fmt.Errorf("duration not found")
+	}
+
+	hours, _ := strconv.Atoi(matches[1])
+	minutes, _ := strconv.Atoi(matches[2])
+	seconds, _ := strconv.Atoi(matches[3])
+	return hours*3600 + minutes*60 + seconds, nil
 }
 
 // Optional helper if you want to format time later

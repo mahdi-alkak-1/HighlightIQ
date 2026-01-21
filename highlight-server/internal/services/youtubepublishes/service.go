@@ -23,6 +23,15 @@ func New(clips *clipsrepo.Repo, repo *yprepo.Repo) *Service {
 	}
 }
 
+func shouldMarkPublished(status string) bool {
+	switch status {
+	case "uploaded", "published":
+		return true
+	default:
+		return false
+	}
+}
+
 func (s *Service) Create(ctx context.Context, userID int64, clipID int64, in CreateInput) (yprepo.YoutubePublish, error) {
 	if _, err := s.clips.GetByIDForUser(ctx, userID, clipID); err != nil {
 		if errors.Is(err, clipsrepo.ErrNotFound) {
@@ -45,6 +54,12 @@ func (s *Service) Create(ctx context.Context, userID int64, clipID int64, in Cre
 	})
 	if err != nil {
 		return yprepo.YoutubePublish{}, err
+	}
+
+	if shouldMarkPublished(in.Status) {
+		if err := s.clips.UpdateStatusByID(ctx, clipID, "published"); err != nil {
+			return yprepo.YoutubePublish{}, err
+		}
 	}
 
 	return created, nil
@@ -72,6 +87,12 @@ func (s *Service) CreateInternal(ctx context.Context, clipID int64, in CreateInp
 	})
 	if err != nil {
 		return yprepo.YoutubePublish{}, err
+	}
+
+	if shouldMarkPublished(in.Status) {
+		if err := s.clips.UpdateStatusByID(ctx, clipID, "published"); err != nil {
+			return yprepo.YoutubePublish{}, err
+		}
 	}
 
 	return created, nil
@@ -136,6 +157,12 @@ func (s *Service) Update(ctx context.Context, userID int64, id int64, in UpdateI
 			return yprepo.YoutubePublish{}, ErrNotFound
 		}
 		return yprepo.YoutubePublish{}, err
+	}
+
+	if in.Status != nil && shouldMarkPublished(*in.Status) {
+		if err := s.clips.UpdateStatusByID(ctx, updated.ClipID, "published"); err != nil {
+			return yprepo.YoutubePublish{}, err
+		}
 	}
 
 	return updated, nil

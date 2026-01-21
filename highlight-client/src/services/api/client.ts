@@ -1,5 +1,5 @@
 import { ApiError, ApiErrorData } from "@/types/api";
-import { getAuthToken } from "@/utils/authStorage";
+import { clearAuthSession, getAuthToken } from "@/utils/authStorage";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ??
@@ -29,6 +29,12 @@ export const request = async <T>(path: string, options?: RequestInit): Promise<T
       data = (await response.json()) as ApiErrorData;
     } catch {
       data = undefined;
+    }
+    if (response.status === 401) {
+      clearAuthSession();
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     throw buildError(response.status, data);
   }
