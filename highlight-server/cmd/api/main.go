@@ -35,7 +35,9 @@ import (
 )
 
 func main() {
+	config.LoadDotEnv(".env")
 	cfg := config.Load()
+	log.Printf("N8N publish url=%s secret_set=%t", cfg.N8NPublishWebhookURL, cfg.N8NWebhookSecret != "")
 	log.Printf("DB host=%s port=%s name=%s user=%s", cfg.MySQL.Host, cfg.MySQL.Port, cfg.MySQL.Name, cfg.MySQL.User)
 
 	conn, err := db.NewMySQL(cfg.MySQL)

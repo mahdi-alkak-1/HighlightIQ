@@ -4,6 +4,7 @@ import RegisterPage from "@/pages/auth/RegisterPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
 import RecordingsPage from "@/pages/recordings/RecordingsPage";
 import ClipsCandidatesPage from "@/pages/ClipsCandidatesPage";
+import ClipsLibraryPage from "@/pages/ClipsLibraryPage";
 
 const AppRoutes = () => {
   return (
@@ -14,6 +15,7 @@ const AppRoutes = () => {
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/recordings" element={<RecordingsPage />} />
       <Route path="/clips-candidates" element={<ClipsCandidatesPage />} />
+      <Route path="/clips-library" element={<ClipsLibraryPage />} />
       <Route path="*" element={<Navigate to="/register" replace />} />
     </Routes>
   );

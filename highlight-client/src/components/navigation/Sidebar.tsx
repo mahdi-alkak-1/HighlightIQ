@@ -1,7 +1,7 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { navigationItems } from "@/data/dashboardData";
 import { NavigationItem } from "@/types/dashboard";
-import { getAuthUser } from "@/utils/authStorage";
+import { clearAuthSession, getAuthUser } from "@/utils/authStorage";
 
 const iconStyles = "h-4 w-4";
 
@@ -51,6 +51,7 @@ const renderIcon = (icon: NavigationItem["icon"]) => {
 };
 
 const Sidebar = () => {
+  const navigate = useNavigate();
   const user = getAuthUser();
 
   return (
@@ -89,6 +90,26 @@ const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
+
+      <div className="px-4 pb-4">
+        <button
+          type="button"
+          onClick={() => {
+            clearAuthSession();
+            navigate("/login");
+          }}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
+        >
+          <span className="text-white/70">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className={iconStyles}>
+              <path d="M10 6H5v12h5" strokeWidth="1.5" />
+              <path d="M13 16l4-4-4-4" strokeWidth="1.5" />
+              <path d="M8 12h9" strokeWidth="1.5" />
+            </svg>
+          </span>
+          <span>Logout</span>
+        </button>
+      </div>
 
       <div className="border-t border-brand-border px-4 py-5">
         <div className="flex items-center gap-3">
