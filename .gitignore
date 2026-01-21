@@ -1,0 +1,54 @@
+# -------------------------
+# Python (clipper)
+# -------------------------
+clipper/venv/
+clipper/.venv/
+clipper/__pycache__/
+clipper/**/*.pyc
+clipper/**/*.pyo
+clipper/*.egg-info/
+clipper/.pytest_cache/
+clipper/.mypy_cache/
+clipper/.ruff_cache/
+
+# -------------------------
+# Go
+# -------------------------
+bin/
+dist/
+tmp/
+*.exe
+*.test
+*.out
+coverage.out
+
+# -------------------------
+# Env / secrets
+# -------------------------
+.env
+.env.*
+!.env.example
+highlightiq.env
+*.pem
+*.key
+
+# -------------------------
+# Frontend (highlight-client)
+# -------------------------
+../highlight-client/node_modules/
+../highlight-client/.vite/
+../highlight-client/node_modules/.vite/
+../highlight-client/dist/
+
+# -------------------------
+# OS / Editor
+# -------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+github_deploy_key
+github_deploy_key.pub
+.github_deploy_key
+.github_deploy_key.pub
+D:/recordings/candidate-thumbs/
