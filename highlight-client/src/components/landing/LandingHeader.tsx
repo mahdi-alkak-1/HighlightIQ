@@ -4,11 +4,16 @@ const LandingHeader = () => {
   return (
     <header className="flex items-center justify-between px-6 py-6 md:px-12">
       <div className="flex items-center gap-3">
-        <img
-          src="/images/highlightiq-logo.png"
-          alt="HighlightIQ"
-          className="h-9 w-auto"
-        />
+        <div className="relative">
+          <div className="pointer-events-none absolute -top-6 left-2 h-7 w-7 rotate-12 rounded-t-[14px] rounded-b-[6px] bg-gradient-to-b from-[#E94C4C] to-[#B11D1D] shadow-[0_6px_12px_rgba(0,0,0,0.45)]" />
+          <div className="pointer-events-none absolute -top-8 left-6 h-4 w-4 rounded-full bg-white shadow-[0_2px_10px_rgba(255,255,255,0.9)]" />
+          <div className="pointer-events-none absolute -top-1 left-0 h-3 w-10 rounded-full bg-white shadow-[0_2px_8px_rgba(255,255,255,0.6)]" />
+          <img
+            src="/images/highlightiq-logo.png"
+            alt="HighlightIQ"
+            className="h-9 w-auto"
+          />
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <Link
