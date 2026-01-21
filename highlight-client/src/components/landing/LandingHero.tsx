@@ -6,9 +6,6 @@ const LandingHero = () => {
       <div className="absolute -left-32 top-10 h-72 w-72 rounded-full bg-brand-blue/15 blur-[120px]" />
       <div className="absolute right-0 top-24 h-80 w-80 rounded-full bg-white/5 blur-[120px]" />
       <div className="relative mx-auto max-w-5xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-brand-blue/80">
-          AI Highlights Engine
-        </p>
         <h1 className="mt-5 text-4xl font-semibold leading-tight text-white md:text-6xl">
           Turn every session into a
           <span className="block text-brand-blue"> highlight reel that posts itself.</span>
@@ -59,24 +56,26 @@ const LandingHero = () => {
           </div>
           <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-              Weekly output
+              Pipeline snapshot
             </p>
             <div className="mt-5 space-y-4">
-              {[58, 84, 120, 96, 140].map((value, index) => (
-                <div key={value} className="flex items-center gap-3">
+              {[
+                { label: "Upload", note: "Gameplay ingested" },
+                { label: "Detect", note: "Highlights extracted" },
+                { label: "Review", note: "Pick best clips" },
+                { label: "Publish", note: "Push to YouTube" },
+              ].map((stage) => (
+                <div key={stage.label} className="flex items-center gap-3">
                   <div className="h-2 w-2 rounded-full bg-brand-blue" />
-                  <div className="h-2 flex-1 rounded-full bg-white/10">
-                    <div
-                      className="h-2 rounded-full bg-brand-blue"
-                      style={{ width: `${(value / 150) * 100}%` }}
-                    />
+                  <div className="flex-1">
+                    <p className="text-sm text-white">{stage.label}</p>
+                    <p className="text-xs text-white/50">{stage.note}</p>
                   </div>
-                  <span className="text-xs text-white/60">{value}</span>
                 </div>
               ))}
             </div>
             <p className="mt-6 text-xs text-white/50">
-              Consistent output keeps your channel active even on low-effort days.
+              Every step stays visible so creators always know what is next.
             </p>
           </div>
         </div>

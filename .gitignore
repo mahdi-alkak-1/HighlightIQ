@@ -35,10 +35,10 @@ highlightiq.env
 # -------------------------
 # Frontend (highlight-client)
 # -------------------------
-../highlight-client/node_modules/
-../highlight-client/.vite/
-../highlight-client/node_modules/.vite/
-../highlight-client/dist/
+highlight-client/node_modules/
+highlight-client/.vite/
+highlight-client/node_modules/.vite/
+highlight-client/dist/
 
 # -------------------------
 # OS / Editor
