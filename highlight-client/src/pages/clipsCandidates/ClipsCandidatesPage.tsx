@@ -8,7 +8,7 @@ import StudioHeader from "@/components/clipStudio/StudioHeader";
 import VideoPreview from "@/components/clipStudio/VideoPreview";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import { useClipStudio } from "@/hooks/useClipStudio";
-import { maxClipDurationSeconds } from "@/data/clipStudioData";
+import { candidatePageSize, maxClipDurationSeconds } from "@/data/clipStudioData";
 
 const ClipsCandidatesPage = () => {
   const {
@@ -42,6 +42,7 @@ const ClipsCandidatesPage = () => {
   } = useClipStudio();
 
   const [description, setDescription] = useState("");
+  const [candidatePage, setCandidatePage] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const previewImage =
@@ -62,6 +63,15 @@ const ClipsCandidatesPage = () => {
     [candidates, candidateThumbnails, previewImage]
   );
 
+  const totalCandidates = candidateItems.length;
+  const pageCount = Math.max(1, Math.ceil(totalCandidates / candidatePageSize));
+  const currentPage = Math.min(candidatePage, pageCount);
+  const pageStart = (currentPage - 1) * candidatePageSize;
+  const pageEnd = Math.min(pageStart + candidatePageSize, totalCandidates);
+  const pagedCandidates = candidateItems.slice(pageStart, pageEnd);
+  const rangeLabel =
+    totalCandidates === 0 ? "0 of 0" : `${pageStart + 1}-${pageEnd} of ${totalCandidates}`;
+
   const isGenerateDisabled = !selectedCandidateId || isGenerating || hasGeneratedClip;
   const isPublishDisabled = !selectedCandidateId || !isPublishReady || publishRequested;
 
@@ -76,6 +86,24 @@ const ClipsCandidatesPage = () => {
   useEffect(() => {
     setDescription(selectedClip?.caption ?? "");
   }, [selectedClip?.id]);
+
+  useEffect(() => {
+    if (candidatePage > pageCount) {
+      setCandidatePage(pageCount);
+    }
+  }, [candidatePage, pageCount]);
+
+  useEffect(() => {
+    if (!selectedCandidateId) {
+      return;
+    }
+    const index = candidates.findIndex((candidate) => candidate.id === selectedCandidateId);
+    if (index < 0) {
+      return;
+    }
+    const nextPage = Math.floor(index / candidatePageSize) + 1;
+    setCandidatePage(nextPage);
+  }, [selectedCandidateId, candidates]);
 
   return (
     <DashboardLayout>
@@ -104,7 +132,15 @@ const ClipsCandidatesPage = () => {
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_1fr_280px]">
           <div className="flex flex-col gap-4">
-            <CandidateList items={candidateItems} activeId={selectedCandidateId} onSelect={setSelectedCandidateId} />
+            <CandidateList
+              items={pagedCandidates}
+              activeId={selectedCandidateId}
+              onSelect={setSelectedCandidateId}
+              page={currentPage}
+              pageCount={pageCount}
+              rangeLabel={rangeLabel}
+              onPageChange={setCandidatePage}
+            />
           </div>
 
           <div>
