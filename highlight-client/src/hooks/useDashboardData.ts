@@ -51,13 +51,6 @@ const buildStats = (clips: ClipApi[], publishes: YoutubePublishApi[]): StatCardD
       trend: "neutral",
       footnote: "Summed across published shorts",
     },
-    {
-      label: "Average Retention Score",
-      value: "N/A",
-      change: "Preview",
-      trend: "neutral",
-      footnote: "Metric not available yet",
-    },
   ];
 };
 

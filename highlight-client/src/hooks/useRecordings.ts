@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getRecordings, getRecordingThumbnail, uploadRecording } from "@/services/api/recordings";
 import { RecordingApi, RecordingCreateInput } from "@/types/recordings";
 import { isApiError } from "@/types/api";
+import { markUploadStarted } from "@/utils/pipelineTimeline";
 
 export const useRecordings = () => {
   const [recordings, setRecordings] = useState<RecordingApi[]>([]);
@@ -74,6 +75,7 @@ export const useRecordings = () => {
     try {
       const created = await uploadRecording(input, setUploadProgress);
       setRecordings((prev) => [created, ...prev]);
+      markUploadStarted(created.ID);
       return created;
     } catch (error) {
       if (isApiError(error)) {

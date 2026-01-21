@@ -198,8 +198,8 @@ func (s *Service) DetectAndStore(ctx context.Context, userID int64, in DetectInp
 		return 0, err
 	}
 
-	// Detection complete; recording stays uploaded until a clip is exported.
-	_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "uploaded")
+	// Detection complete; mark recording as used so pipeline can advance.
+	_ = s.recordings.UpdateStatusByID(ctx, rec.ID, "used")
 	return inserted, nil
 }
 

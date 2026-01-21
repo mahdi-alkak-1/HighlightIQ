@@ -15,6 +15,7 @@ const ClipsCandidatesPage = () => {
     candidates,
     selectedCandidateId,
     setSelectedCandidateId,
+    activeRecording,
     recordingThumbnail,
     recordingVideo,
     candidateThumbnails,
@@ -43,6 +44,10 @@ const ClipsCandidatesPage = () => {
 
   const [description, setDescription] = useState("");
   const [candidatePage, setCandidatePage] = useState(1);
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
+  const [noticeTone, setNoticeTone] = useState<"info" | "success" | "error">("info");
+  const successRef = useRef<string | null>(null);
+  const noticeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const previewImage =
@@ -105,6 +110,40 @@ const ClipsCandidatesPage = () => {
     setCandidatePage(nextPage);
   }, [selectedCandidateId, candidates]);
 
+  useEffect(() => {
+    if (!activeRecording) {
+      setNoticeMessage(null);
+      return;
+    }
+
+    if (noticeTimeout.current) {
+      clearTimeout(noticeTimeout.current);
+      noticeTimeout.current = null;
+    }
+
+    if (activeRecording.Status === "processing") {
+      setNoticeTone("info");
+      setNoticeMessage("Creating clip candidates... please wait.");
+      return;
+    }
+
+    if (activeRecording.Status === "used" && candidates.length > 0) {
+      const key = `${activeRecording.ID}-${candidates.length}`;
+      if (successRef.current === key) {
+        return;
+      }
+      successRef.current = key;
+      setNoticeTone("success");
+      setNoticeMessage("Clip candidates successfully created.");
+      noticeTimeout.current = setTimeout(() => {
+        setNoticeMessage(null);
+      }, 10000);
+      return;
+    }
+
+    setNoticeMessage(null);
+  }, [activeRecording?.Status, activeRecording?.ID, candidates.length]);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -124,7 +163,21 @@ const ClipsCandidatesPage = () => {
           }
         />
 
-        {errorMessage && (
+        {noticeMessage && (
+          <div
+            className={`rounded-lg px-4 py-2 text-sm ${
+              noticeTone === "success"
+                ? "border border-brand-ready/40 bg-brand-ready/10 text-brand-ready"
+                : noticeTone === "error"
+                  ? "border border-red-500/40 bg-red-500/10 text-red-200"
+                  : "border border-brand-blue/40 bg-brand-blue/10 text-white/80"
+            }`}
+          >
+            {noticeMessage}
+          </div>
+        )}
+
+        {errorMessage && activeRecording?.Status !== "processing" && (
           <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-200">
             {errorMessage}
           </div>

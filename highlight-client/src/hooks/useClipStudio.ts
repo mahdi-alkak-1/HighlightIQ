@@ -9,6 +9,7 @@ import { RecordingApi } from "@/types/recordings";
 import { YoutubePublishApi } from "@/types/youtubePublishes";
 import { isApiError } from "@/types/api";
 import { clamp, formatSeconds } from "@/utils/time";
+import { markPublishRequested } from "@/utils/pipelineTimeline";
 import { maxClipDurationSeconds } from "@/data/clipStudioData";
 
 interface CandidateView {
@@ -393,6 +394,9 @@ export const useClipStudio = () => {
         ...(trimmedDescription ? { description: trimmedDescription } : {}),
         privacy_status: input.privacyStatus,
       });
+      if (activeRecording) {
+        markPublishRequested(activeRecording.ID);
+      }
       setPublishRequested(true);
       setModalMessage("Publish request sent to workflow.");
     } finally {
