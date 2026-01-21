@@ -1,9 +1,6 @@
 import { Link } from "react-router-dom";
-import { useDashboardEffects } from "@/hooks/useDashboardEffects";
 
 const LandingHero = () => {
-  const { enabled, prefersReducedMotion, setEnabled } = useDashboardEffects();
-
   return (
     <section className="relative px-6 pb-20 pt-16 md:px-12">
       <div className="absolute -left-32 top-10 h-72 w-72 rounded-full bg-brand-blue/15 blur-[120px]" />
@@ -30,25 +27,6 @@ const LandingHero = () => {
           >
             I already have an account
           </Link>
-        </div>
-        <div className="mt-6 inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/70">
-          <span className={prefersReducedMotion ? "text-white/40" : undefined}>
-            Snow effect
-          </span>
-          <button
-            type="button"
-            onClick={() => setEnabled(!enabled)}
-            disabled={prefersReducedMotion}
-            className={`relative h-5 w-9 rounded-full transition ${
-              enabled && !prefersReducedMotion ? "bg-brand-blue" : "bg-white/20"
-            } disabled:cursor-not-allowed`}
-          >
-            <span
-              className={`absolute top-1 h-3 w-3 rounded-full bg-white transition ${
-                enabled && !prefersReducedMotion ? "right-1" : "left-1"
-              }`}
-            />
-          </button>
         </div>
         <div className="mt-12 grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
