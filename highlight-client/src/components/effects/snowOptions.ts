@@ -48,21 +48,21 @@ const intensityPresets: Record<SnowIntensity, ISourceOptions> = {
     particles: {
       ...baseOptions.particles,
       number: {
-        value: 80,
+        value: 170,
         density: {
           enable: true,
-          area: 700,
+          area: 620,
         },
       },
       opacity: {
-        value: { min: 0.25, max: 0.6 },
+        value: { min: 0.4, max: 0.8 },
       },
       size: {
-        value: { min: 1, max: 3.4 },
+        value: { min: 1.6, max: 4.6 },
       },
       move: {
         ...baseOptions.particles.move,
-        speed: 1.0,
+        speed: 1.8,
       },
     },
   },
@@ -71,21 +71,21 @@ const intensityPresets: Record<SnowIntensity, ISourceOptions> = {
     particles: {
       ...baseOptions.particles,
       number: {
-        value: 120,
+        value: 240,
         density: {
           enable: true,
-          area: 650,
+          area: 560,
         },
       },
       opacity: {
-        value: { min: 0.3, max: 0.65 },
+        value: { min: 0.45, max: 0.85 },
       },
       size: {
-        value: { min: 1.3, max: 3.6 },
+        value: { min: 1.8, max: 4.8 },
       },
       move: {
         ...baseOptions.particles.move,
-        speed: 1.2,
+        speed: 2.1,
       },
     },
   },
@@ -94,21 +94,21 @@ const intensityPresets: Record<SnowIntensity, ISourceOptions> = {
     particles: {
       ...baseOptions.particles,
       number: {
-        value: 170,
+        value: 340,
         density: {
           enable: true,
-          area: 600,
+          area: 520,
         },
       },
       opacity: {
-        value: { min: 0.35, max: 0.7 },
+        value: { min: 0.5, max: 0.9 },
       },
       size: {
-        value: { min: 1.4, max: 4 },
+        value: { min: 2.0, max: 5.2 },
       },
       move: {
         ...baseOptions.particles.move,
-        speed: 1.4,
+        speed: 2.5,
       },
     },
   },

@@ -74,11 +74,16 @@ export const usePipeline = () => {
           result.status === "fulfilled" ? result.value.data : []
         );
 
+        const storedTimeline = readPipelineTimeline();
+        if (storedTimeline && storedTimeline.recordingId === latest.ID) {
+          setTimeline(storedTimeline);
+        }
+
         const nextTimeline = updateTimeline({
           latestRecording: latest,
           candidates,
           publishes,
-          previous: timeline,
+          previous: storedTimeline ?? timeline,
           detectionWasRunning,
         });
         setTimeline(nextTimeline);
@@ -127,7 +132,12 @@ export const usePipeline = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       const stored = readPipelineTimeline();
-      if (stored?.recordingId !== timeline?.recordingId || stored?.publishRequestedAt !== timeline?.publishRequestedAt) {
+      if (
+        stored?.recordingId !== timeline?.recordingId ||
+        stored?.publishRequestedAt !== timeline?.publishRequestedAt ||
+        stored?.uploadStartedAt !== timeline?.uploadStartedAt ||
+        stored?.detectionCompletedAt !== timeline?.detectionCompletedAt
+      ) {
         setTimeline(stored);
       }
     }, 10000);
@@ -172,7 +182,12 @@ const updateTimeline = ({
     return { recordingId };
   }
 
-  const detectionRunning = latestRecording.Status === "processing";
+  const detectionRunning =
+    latestRecording.Status === "processing" ||
+    (latestRecording.Status === "uploaded" &&
+      timeline?.uploadStartedAt !== undefined &&
+      candidates.length === 0 &&
+      !timeline?.detectionCompletedAt);
   if (detectionRunning) {
     detectionWasRunning.current = true;
     next.detectionCompletedAt = undefined;
@@ -257,14 +272,11 @@ const buildStages = ({
   const detectionWindowEnd = detectionCompletedAt ? detectionCompletedAt + 10000 : null;
   const reviewWindowEnd = detectionCompletedAt ? detectionCompletedAt + 20000 : null;
 
-  const reviewTimeout = detectionCompletedAt ? detectionCompletedAt + 10 * 60 * 1000 : null;
   const reviewActive =
     detectionCompletedAt !== undefined &&
     detectionWindowEnd !== null &&
-    now >= detectionWindowEnd &&
-    reviewTimeout !== null &&
-    now < reviewTimeout;
-  const reviewComplete = reviewTimeout !== null && now >= reviewTimeout;
+    now >= detectionWindowEnd;
+  const reviewComplete = false;
 
   const publishRequestedAt = timeline?.publishRequestedAt;
   const latestPublish = resolveLatestPublish(publishes);
@@ -290,7 +302,7 @@ const buildStages = ({
         ? "complete"
         : "disabled";
 
-  const reviewState = reviewActive ? "active" : reviewComplete ? "complete" : "disabled";
+  const reviewState = reviewActive ? "active" : "disabled";
   const publishState = publishActive ? "active" : publishComplete ? "complete" : "disabled";
   const syncState = syncActive ? "active" : syncComplete ? "complete" : "disabled";
 
