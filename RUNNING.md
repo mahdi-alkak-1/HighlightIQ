@@ -24,3 +24,11 @@ cd highlight-client
 npm install
 npm run dev
 ```
+## if there is error in node modules, delete and reinstall them
+
+```powershell
+Remove-Item -Recurse -Force node_modules
+Remove-Item -Force package-lock.json
+npm install
+npm run dev
+```
