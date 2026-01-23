@@ -10,17 +10,19 @@ import (
 	recordinghandlers "highlightiq-server/internal/http/handlers/recordings"
 	"highlightiq-server/internal/http/middleware"
 	recRepo "highlightiq-server/internal/repos/recordings"
+	clipcand "highlightiq-server/internal/services/clipcandidates"
 	"highlightiq-server/internal/testutils"
 )
 
 type fakeRecordingsService struct{}
 
-func (fakeRecordingsService) Create(ctx context.Context, userID int64, title string, originalName string, fileBytes []byte) (recRepo.Recording, error) {
+func (fakeRecordingsService) Create(ctx context.Context, userID int64, title string, game string, originalName string, fileBytes []byte) (recRepo.Recording, error) {
 	return recRepo.Recording{
 		ID:           1,
 		UUID:         "rec-uuid-1",
 		UserID:       userID,
 		Title:        title,
+		Game:         game,
 		OriginalName: originalName,
 		StoragePath:  "D:\\recordings\\rec-uuid-1_test.mp4",
 		Status:       "uploaded",
@@ -61,6 +63,13 @@ func (fakeRecordingsService) Delete(ctx context.Context, userID int64, recUUID s
 	return nil
 }
 
+
+type fakeCandidateDetector struct{}
+
+func (fakeCandidateDetector) DetectAndStore(ctx context.Context, userID int64, in clipcand.DetectInput) (int64, error) {
+	return 0, nil
+}
+
 func fakeAuthMW(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := middleware.WithAuthUser(r.Context(), middleware.AuthUser{
@@ -77,7 +86,7 @@ type listRecordingsResponse struct {
 }
 
 func TestRecordingsList(t *testing.T) {
-	recHandler := recordinghandlers.New(fakeRecordingsService{})
+	recHandler := recordinghandlers.New(fakeRecordingsService{}, fakeCandidateDetector{})
 	h := New(nil, recHandler, nil, nil, nil, nil, fakeAuthMW)
 
 	req := httptest.NewRequest(http.MethodGet, "/recordings", nil)
@@ -103,7 +112,7 @@ type updateTitlePayload struct {
 }
 
 func TestRecordingsUpdateTitle(t *testing.T) {
-	recHandler := recordinghandlers.New(fakeRecordingsService{})
+	recHandler := recordinghandlers.New(fakeRecordingsService{}, fakeCandidateDetector{})
 	h := New(nil, recHandler, nil, nil, nil, nil, fakeAuthMW) // ✅ fixed: added clipsHandler=nil
 
 	req := testutils.JSONRequest(http.MethodPatch, "/recordings/rec-uuid-1", updateTitlePayload{

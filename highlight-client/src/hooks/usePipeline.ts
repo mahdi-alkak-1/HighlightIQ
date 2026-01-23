@@ -239,7 +239,7 @@ const isPublished = (publish: YoutubePublishApi | null) => {
   if (!publish) {
     return false;
   }
-  return publish.status === "uploaded" || publish.status === "published";
+  return publish.status === "published";
 };
 
 const resolvePublishCompletedAt = (publish: YoutubePublishApi | null) => {

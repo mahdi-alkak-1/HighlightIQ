@@ -9,7 +9,7 @@ HighlightIQ is a platform that turns long gameplay recordings into short, sharea
 
 <a id="System-Workflow"></a>
 <img src="./README/cards/title3.svg"/>
-[**System Workflow**](#System-Workflow)
+### <a href="#System-Workflow">System Workflow</a>
 
 
 <img src="./README/assests/SystemDesign.png"/>
@@ -30,7 +30,7 @@ n8n Workflow
 
 <a id="interesting-features"></a>
 <img src="./README/cards/title4.svg"/>
-[**Interesting Features**](#interesting-features)
+### <a href="#interesting-features">Interesting Features</a>
 
 - Clip candidate generation: adjustable detection settings for better highlights.
 - Clip Studio editor: trim controls with publish gating.
@@ -45,4 +45,17 @@ n8n Workflow
 
 <a id="user-screens"></a>
 <img src="./README/cards/title5.svg"/>
-[**User Screens**](#user-screens)
+### <a href="#user-screens">User Screens</a>
+
+|  |  |  |
+|---|---|---|
+| <p align="center"><b>Landing</b><br><img src="./README/demo/Landing.png" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Register</b><br><img src="./README/demo/Register.png" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Login</b><br><img src="./README/demo/Signin.png" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> |
+| <p align="center"><b>Uploading Video</b><br><img src="./README/demo/Uploading_Video.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Pipeline Kill Detection</b><br><img src="./README/demo/Pipeline_kill_Detection.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Clip Candidate</b><br><img src="./README/demo/clipcandidates.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> |
+| <p align="center"><b>Pipeline Review</b><br><img src="./README/demo/Pipeline_review.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Publish YouTube</b><br><img src="./README/demo/Youtube_Publish.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Clips Library</b><br><img src="./README/demo/ClipsLibrary.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> |
+
+
+<br><br>
+
+<a id="Tests"></a>
+<img src="./README/cards/title6.svg"/>
+### <a href="#Tests">Tests</a>
