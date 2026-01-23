@@ -47,12 +47,43 @@ n8n Workflow
 <img src="./readme/cards/title5.svg"/>
 ### <a href="#user-screens">User Screens</a>
 
-|  |  |  |
-|:--:|:--:|:--:|
-| <p align="center"><b>Landing</b><br><br><img src="./readme/demo/Landing.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Register</b><br><br><img src="./readme/demo/Register.png" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Login</b><br><br><img src="./readme/demo/Signin.png" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> |
-| <p align="center"><b>Upload</b><br><br><img src="./readme/demo/Uploading_Video.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Kill Detection</b><br><br><img src="./readme/demo/Pipeline_kill_Detection.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Clip Candidates</b><br><br><img src="./readme/demo/clipcandidates.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> |
-| <p align="center"><b>Review</b><br><br><img src="./readme/demo/Pipeline_review.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Publish</b><br><br><img src="./readme/demo/Youtube_Publish.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Library</b><br><br><img src="./readme/demo/ClipsLibrary.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> |
+<table>
+  <!-- Row Group 1 -->
+  <tr>
+    <th align="center">Landing</th>
+    <th align="center">Register</th>
+    <th align="center">Login</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme/demo/Landing.gif" width="300"></td>
+    <td align="center"><img src="./readme/demo/Register.png" width="300"></td>
+    <td align="center"><img src="./readme/demo/Signin.png" width="300"></td>
+  </tr>
 
+  <!-- Row Group 2 -->
+  <tr>
+    <th align="center">Uploading Video</th>
+    <th align="center">Pipeline Kill Detection</th>
+    <th align="center">Clip Candidate</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme/demo/Uploading_Video.gif" width="300"></td>
+    <td align="center"><img src="./readme/demo/Pipeline_kill_Detection.gif" width="300"></td>
+    <td align="center"><img src="./readme/demo/clipcandidates.gif" width="300"></td>
+  </tr>
+
+  <!-- Row Group 3 -->
+  <tr>
+    <th align="center">Pipeline Review</th>
+    <th align="center">Publish YouTube</th>
+    <th align="center">Clips Library</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme/demo/Pipeline_review.gif" width="300"></td>
+    <td align="center"><img src="./readme/demo/Youtube_Publish.gif" width="300"></td>
+    <td align="center"><img src="./readme/demo/ClipsLibrary.gif" width="300"></td>
+  </tr>
+</table>
 
 
 <br><br>
