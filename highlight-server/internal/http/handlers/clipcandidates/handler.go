@@ -1,10 +1,12 @@
 package clipcandidates
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"highlightiq-server/internal/http/middleware"
 	"highlightiq-server/internal/http/response"
+	candidatesrepo "highlightiq-server/internal/repos/clipcandidates"
 	reqs "highlightiq-server/internal/requests/clipcandidates"
 	svc "highlightiq-server/internal/services/clipcandidates"
 	"io"
@@ -15,11 +17,19 @@ import (
 	"strconv"
 )
 
-type Handler struct {
-	svc *svc.Service
+type Service interface {
+	DetectAndStore(ctx context.Context, userID int64, in svc.DetectInput) (int64, error)
+	ListByRecordingUUID(ctx context.Context, userID int64, recordingUUID string) ([]candidatesrepo.Candidate, error)
+	GetByIDForUser(ctx context.Context, userID int64, id int64) (candidatesrepo.Candidate, error)
+	UpdateStatus(ctx context.Context, id int64, status string) error
+	Delete(ctx context.Context, id int64) error
 }
 
-func New(s *svc.Service) *Handler {
+type Handler struct {
+	svc Service
+}
+
+func New(s Service) *Handler {
 	return &Handler{svc: s}
 }
 

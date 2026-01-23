@@ -2,6 +2,7 @@ package youtubepublishes
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -13,14 +14,26 @@ import (
 	"highlightiq-server/internal/http/response"
 	reqs "highlightiq-server/internal/requests/youtubepublishes"
 	svc "highlightiq-server/internal/services/youtubepublishes"
+	yprepo "highlightiq-server/internal/repos/youtubepublishes"
 )
 
+type Service interface {
+	Create(ctx context.Context, userID int64, clipID int64, in svc.CreateInput) (yprepo.YoutubePublish, error)
+	CreateInternal(ctx context.Context, clipID int64, in svc.CreateInput) (yprepo.YoutubePublish, error)
+	ListByClip(ctx context.Context, userID int64, clipID int64) ([]yprepo.YoutubePublish, error)
+	ListVideoIDs(ctx context.Context) ([]string, error)
+	GetByVideoID(ctx context.Context, youtubeVideoID string) (yprepo.YoutubePublish, error)
+	MarkDeletedByVideoID(ctx context.Context, youtubeVideoID string, lastSyncedAt *time.Time) (yprepo.YoutubePublish, error)
+	Update(ctx context.Context, userID int64, id int64, in svc.UpdateInput) (yprepo.YoutubePublish, error)
+	UpdateByVideoID(ctx context.Context, youtubeVideoID string, in svc.UpdateInput) (yprepo.YoutubePublish, error)
+}
+
 type Handler struct {
-	svc    *svc.Service
+	svc    Service
 	secret string
 }
 
-func New(s *svc.Service, secret string) *Handler {
+func New(s Service, secret string) *Handler {
 	return &Handler{svc: s, secret: secret}
 }
 

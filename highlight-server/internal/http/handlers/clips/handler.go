@@ -1,6 +1,7 @@
 package clips
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -11,16 +12,29 @@ import (
 	"github.com/go-chi/chi/v5"
 	"highlightiq-server/internal/http/middleware"
 	"highlightiq-server/internal/http/response"
+	clipsrepo "highlightiq-server/internal/repos/clips"
 	reqs "highlightiq-server/internal/requests/clips"
 	svc "highlightiq-server/internal/services/clips"
 	"log"
 )
 
-type Handler struct {
-	svc *svc.Service
+type Service interface {
+	Create(ctx context.Context, userID int64, in svc.CreateInput) (clipsrepo.Clip, error)
+	List(ctx context.Context, userID int64, recordingUUID *string) ([]clipsrepo.Clip, error)
+	Get(ctx context.Context, userID int64, id int64) (clipsrepo.Clip, error)
+	Update(ctx context.Context, userID int64, id int64, in svc.UpdateInput) (clipsrepo.Clip, error)
+	Delete(ctx context.Context, userID int64, id int64) error
+	Export(ctx context.Context, userID int64, id int64) (clipsrepo.Clip, error)
+	Publish(ctx context.Context, userID int64, id int64, in svc.PublishInput) error
+	GetExport(ctx context.Context, userID int64, id int64) (string, string, error)
+	GetThumbnail(ctx context.Context, userID int64, id int64) (string, string, error)
 }
 
-func New(s *svc.Service) *Handler {
+type Handler struct {
+	svc Service
+}
+
+func New(s Service) *Handler {
 	return &Handler{svc: s}
 }
 
