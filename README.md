@@ -12,19 +12,19 @@ HighlightIQ is a platform that turns long gameplay recordings into short, sharea
 ### <a href="#System-Workflow">System Workflow</a>
 
 
-<img src="./README/assests/SystemDesign.png"/>
+<img src="./README/assets/SystemDesign.png"/>
 
 <br>
 
 Database
-<img src="./README/assests/database.png"/>
+<img src="./README/assets/database.png"/>
 
 <br>
 
 n8n Workflow
 <br>
-<img src="./README/assests/workflow1.png"/>
-<img src="./README/assests/workflow2.png"/>
+<img src="./README/assets/workflow1.png"/>
+<img src="./README/assets/workflow2.png"/>
 
 <br><br>
 
@@ -39,7 +39,7 @@ n8n Workflow
 - Libraries: recordings and clips with filters, pagination, and performance stats.
 <br>
 
-<img src="./README/assests/Features.png"/>
+<img src="./README/assets/Features.png"/>
 
 <br><br>
 
