@@ -112,16 +112,14 @@ const Sidebar = () => {
       </div>
 
       <div className="border-t border-brand-border px-4 py-5">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-white/10" />
-          <div>
-            <p className="text-sm font-semibold text-white">
-              {user?.name ?? "Creator"}
-            </p>
-            <p className="text-xs text-white/50">{user?.email ?? "—"}</p>
-          </div>
+        <div>
+          <p className="text-sm font-semibold text-white">
+            {user?.name ?? "Creator"}
+          </p>
+          <p className="text-xs text-white/50">{user?.email ?? "unknown@email.com"}</p>
         </div>
       </div>
+
     </aside>
   );
 };
