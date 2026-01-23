@@ -48,10 +48,11 @@ n8n Workflow
 ### <a href="#user-screens">User Screens</a>
 
 |  |  |  |
-|---|---|---|
-| <p align="center"><b>Landing</b><br><img src="./readme/demo/Landing.png" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Register</b><br><img src="./readme/demo/Register.png" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Login</b><br><img src="./readme/demo/Signin.png" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> |
-| <p align="center"><b>Uploading Video</b><br><img src="./readme/demo/Uploading_Video.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Pipeline Kill Detection</b><br><img src="./readme/demo/Pipeline_kill_Detection.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Clip Candidate</b><br><img src="./readme/demo/clipcandidates.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> |
-| <p align="center"><b>Pipeline Review</b><br><img src="./readme/demo/Pipeline_review.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Publish YouTube</b><br><img src="./readme/demo/Youtube_Publish.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> | <p align="center"><b>Clips Library</b><br><img src="./readme/demo/ClipsLibrary.gif" width="220" style="border:1px solid #444; border-radius:10px; padding:6px;"></p> |
+|:--:|:--:|:--:|
+| <p align="center"><b>Landing</b><br><br><img src="./readme/demo/Landing.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Register</b><br><br><img src="./readme/demo/Register.png" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Login</b><br><br><img src="./readme/demo/Signin.png" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> |
+| <p align="center"><b>Upload</b><br><br><img src="./readme/demo/Uploading_Video.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Kill Detection</b><br><br><img src="./readme/demo/Pipeline_kill_Detection.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Clip Candidates</b><br><br><img src="./readme/demo/clipcandidates.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> |
+| <p align="center"><b>Review</b><br><br><img src="./readme/demo/Pipeline_review.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Publish</b><br><br><img src="./readme/demo/Youtube_Publish.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> | <p align="center"><b>Library</b><br><br><img src="./readme/demo/ClipsLibrary.gif" width="260" style="border:1px solid #2f2f2f; border-radius:12px; padding:6px;"></p> |
+
 
 
 <br><br>
