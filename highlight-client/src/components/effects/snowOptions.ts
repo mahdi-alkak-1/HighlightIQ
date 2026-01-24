@@ -1,4 +1,4 @@
-import { ISourceOptions } from "tsparticles-engine";
+import { ISourceOptions } from "@tsparticles/engine";
 
 export type SnowIntensity = "low" | "medium" | "high";
 

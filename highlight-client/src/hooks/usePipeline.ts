@@ -194,9 +194,9 @@ const updateTimeline = ({
   const detectionRunning =
     latestRecording.Status === "processing" ||
     (latestRecording.Status === "uploaded" &&
-      timeline?.uploadStartedAt !== undefined &&
+      next.uploadStartedAt !== undefined &&
       candidates.length === 0 &&
-      !timeline?.detectionCompletedAt);
+      !next.detectionCompletedAt);
   if (detectionRunning) {
     detectionWasRunning.current = true;
     next.detectionCompletedAt = undefined;

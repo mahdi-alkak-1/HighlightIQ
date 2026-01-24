@@ -22,8 +22,7 @@ const ClipsCandidatesPage = () => {
     timelineStart,
     timelineEnd,
     recordingDuration,
-    updateTimelineStart,
-    updateTimelineEnd,
+    updateTimelineRange,
     clipTitle,
     setClipTitle,
     selectedClip,
@@ -210,8 +209,7 @@ const ClipsCandidatesPage = () => {
                   duration={timelineDuration}
                   maxDuration={maxClipDurationSeconds}
                   totalDuration={Math.max(1, recordingDuration)}
-                  onStartChange={updateTimelineStart}
-                  onEndChange={updateTimelineEnd}
+                  onRangeChange={updateTimelineRange}
                 />
               </div>
             )}

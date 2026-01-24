@@ -339,7 +339,7 @@ export const useClipStudio = () => {
     try {
       let clip = selectedClip;
       if (!clip) {
-        clip = await createClip({
+        const created = await createClip({
           recording_uuid: activeRecording.UUID,
           candidate_id: selectedCandidate.id,
           title: clipTitle || selectedCandidate.label,
@@ -347,7 +347,8 @@ export const useClipStudio = () => {
           start_ms: Math.round(timelineStart * 1000),
           end_ms: Math.round(timelineEnd * 1000),
         });
-        setClips((prev) => [clip, ...prev]);
+        clip = created;
+        setClips((prev) => [created, ...prev]);
       } else if (description && clip.caption !== description) {
         const updated = await updateClip(clip.id, {
           title: clipTitle || selectedCandidate.label,
