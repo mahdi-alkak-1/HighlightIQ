@@ -1,6 +1,6 @@
 module highlightiq-server
 
-go 1.25.5
+go 1.22
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
