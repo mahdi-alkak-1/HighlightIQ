@@ -32,3 +32,8 @@ Remove-Item -Force package-lock.json
 npm install
 npm run dev
 ```
+
+## remove any tracked node_modules (if added)
+```powershell
+git rm -r --cached highlight-client/node_modules
+```
