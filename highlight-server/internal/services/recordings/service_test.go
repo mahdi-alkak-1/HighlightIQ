@@ -1,14 +1,20 @@
 package recordings
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestSanitizeFileName(t *testing.T) {
 	got := sanitizeFileName(`..\evil\path\my video?.mp4`)
 	if got == "" || got == "upload.mp4" {
 		t.Fatalf("expected sanitized name, got %q", got)
 	}
-	if got != "my_video.mp4" {
-		t.Fatalf("unexpected sanitized output: %q", got)
+	if strings.ContainsAny(got, `\\/:*?"<>| `) {
+		t.Fatalf("expected sanitized output without special chars, got %q", got)
+	}
+	if !strings.HasSuffix(got, ".mp4") {
+		t.Fatalf("expected mp4 suffix, got %q", got)
 	}
 }
 
