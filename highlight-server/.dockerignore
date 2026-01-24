@@ -1,0 +1,10 @@
+.git
+.gitignore
+node_modules
+highlightiq-api
+clipper/.venv
+clipper/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.log
+migrations/*.down.sql
