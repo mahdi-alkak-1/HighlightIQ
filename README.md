@@ -91,3 +91,22 @@ n8n Workflow
 <a id="Tests"></a>
 <img src="./readme/cards/title6.svg"/>
 ### <a href="#Tests">Tests</a>
+
+<table>
+  <tr>
+    <th align="center">CI/CD</th>
+    <th align="center">Workflows</th>
+    <th align="center">Tests</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./readme/demo/CICD.png" width="300" alt="CI/CD" />
+    </td>
+    <td align="center">
+      <img src="./readme/demo/WorkFlows.png" width="300" alt="Workflows" />
+    </td>
+    <td align="center">
+      <img src="./readme/demo/Tests.png" width="300" alt="Tests" />
+    </td>
+  </tr>
+</table>
