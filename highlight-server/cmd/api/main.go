@@ -73,7 +73,11 @@ func main() {
 	authService := authsvc.New(usersRepo, cfg.JWTSecret)
 	recService := recordingsvc.New(recRepo, cfg.RecordingsDir)
 
-	clipperClient := clipper.New("http://127.0.0.1:8090")
+	clipperURL := os.Getenv("CLIPPER_URL")
+	if clipperURL == "" {
+		clipperURL = "http://127.0.0.1:8090"
+	}
+	clipperClient := clipper.New(clipperURL)
 	clipCandidatesService := clipcandidatessvc.New(recRepo, clipCandidatesRepo, clipperClient)
 
 	clipsDir := os.Getenv("CLIPS_DIR")

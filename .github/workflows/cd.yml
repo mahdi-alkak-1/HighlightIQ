@@ -1,0 +1,60 @@
+name: CD (DockerHub)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+env:
+  IMAGE_NAMESPACE: mahdialkak
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./highlight-server
+          file: ./highlight-server/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAMESPACE }}/highlightiq-api:latest
+            ${{ env.IMAGE_NAMESPACE }}/highlightiq-api:${{ github.sha }}
+
+      - name: Build and push Clipper image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./highlight-server/clipper
+          file: ./highlight-server/clipper/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAMESPACE }}/highlightiq-clipper:latest
+            ${{ env.IMAGE_NAMESPACE }}/highlightiq-clipper:${{ github.sha }}
+
+      - name: Build and push Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./highlight-client
+          file: ./highlight-client/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAMESPACE }}/highlightiq-web:latest
+            ${{ env.IMAGE_NAMESPACE }}/highlightiq-web:${{ github.sha }}

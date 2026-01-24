@@ -75,6 +75,15 @@ export const usePipeline = () => {
         );
 
         const storedTimeline = readPipelineTimeline();
+        let seedTimeline = storedTimeline;
+        if (!seedTimeline) {
+          const createdAt = new Date(latest.CreatedAt).getTime();
+          const isRecent = Date.now() - createdAt < 10 * 60 * 1000;
+          if (isRecent && (latest.Status === "uploaded" || latest.Status === "processing" || latest.Status === "used")) {
+            seedTimeline = { recordingId: latest.ID, uploadStartedAt: createdAt };
+            writePipelineTimeline(seedTimeline);
+          }
+        }
         if (storedTimeline && storedTimeline.recordingId === latest.ID) {
           setTimeline(storedTimeline);
         }
@@ -83,7 +92,7 @@ export const usePipeline = () => {
           latestRecording: latest,
           candidates,
           publishes,
-          previous: storedTimeline ?? timeline,
+          previous: seedTimeline ?? timeline,
           detectionWasRunning,
         });
         setTimeline(nextTimeline);
@@ -196,6 +205,8 @@ const updateTimeline = ({
     next.detectionCompletedAt = resolveDetectionCompletedAt(latestRecording, candidates);
   } else if (!next.detectionCompletedAt && candidates.length > 0) {
     next.detectionCompletedAt = resolveDetectionCompletedAt(latestRecording, candidates);
+  } else if (!next.detectionCompletedAt && latestRecording.Status == "used") {
+    next.detectionCompletedAt = resolveDetectionCompletedAt(latestRecording, candidates);
   }
 
   const latestPublish = resolveLatestPublish(publishes);
@@ -209,7 +220,11 @@ const updateTimeline = ({
     next = { recordingId };
   }
 
-  if (next.uploadStartedAt && !next.detectionCompletedAt && latestRecording.Status !== "processing" && latestRecording.Status !== "uploaded") {
+  if (
+    next.uploadStartedAt &&
+    !next.detectionCompletedAt &&
+    latestRecording.Status === "failed"
+  ) {
     next.uploadStartedAt = undefined;
   }
 
