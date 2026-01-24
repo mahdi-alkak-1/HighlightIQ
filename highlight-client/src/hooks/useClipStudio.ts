@@ -70,6 +70,14 @@ export const useClipStudio = () => {
   const [publishRequested, setPublishRequested] = useState(false);
   const [publishConnected, setPublishConnected] = useState(true);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
+  const [confirmPublishInput, setConfirmPublishInput] = useState<{
+    title: string;
+    description: string;
+    privacyStatus: "public" | "unlisted" | "private";
+  } | null>(null);
+  const publishPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const publishPollAttempts = useRef(0);
+  const publishedNoticeRef = useRef<Set<number>>(new Set());
   const [state, setState] = useState<StudioState>({
     isLoading: true,
     errorMessage: null,
@@ -240,22 +248,6 @@ export const useClipStudio = () => {
     };
   }, [candidates]);
 
-  useEffect(() => {
-    if (!selectedCandidateId) {
-      return;
-    }
-    const candidate = candidates.find((item) => item.id === selectedCandidateId);
-    if (!candidate) {
-      return;
-    }
-    const startSec = Math.floor(candidate.startMs / 1000);
-    const endSec = Math.ceil(candidate.endMs / 1000);
-    const cappedEnd = Math.min(startSec + maxClipDurationSeconds, endSec);
-    setTimelineStart(startSec);
-    setTimelineEnd(Math.max(cappedEnd, startSec + 1));
-    setClipTitle(candidate.label);
-  }, [selectedCandidateId, candidates]);
-
   const recordingDuration = resolveRecordingDuration(activeRecording);
 
   const selectedCandidate = useMemo(
@@ -269,6 +261,18 @@ export const useClipStudio = () => {
     }
     return clips.find((clip) => clip.candidate_id === selectedCandidate.id) ?? null;
   }, [clips, selectedCandidate]);
+
+  useEffect(() => {
+    if (!selectedCandidate) {
+      return;
+    }
+    const startSec = Math.floor(selectedCandidate.startMs / 1000);
+    const endSec = Math.ceil(selectedCandidate.endMs / 1000);
+    const cappedEnd = Math.min(startSec + maxClipDurationSeconds, endSec);
+    setTimelineStart(startSec);
+    setTimelineEnd(Math.max(cappedEnd, startSec + 1));
+    setClipTitle(selectedClip?.title || selectedCandidate.label);
+  }, [selectedCandidate, selectedClip?.title]);
 
   const publishEntry = useMemo(() => {
     if (!selectedClip) {
@@ -366,7 +370,29 @@ export const useClipStudio = () => {
     }
   };
 
-  const handlePublish = async (input: { title: string; description: string; privacyStatus: "public" | "unlisted" | "private" }) => {
+  const sendPublishRequest = async (input: {
+    title: string;
+    description: string;
+    privacyStatus: "public" | "unlisted" | "private";
+  }) => {
+    const trimmedDescription = input.description.trim();
+    await publishClip(selectedClip!.id, {
+      title: input.title,
+      ...(trimmedDescription ? { description: trimmedDescription } : {}),
+      privacy_status: input.privacyStatus,
+    });
+    if (activeRecording) {
+      markPublishRequested(activeRecording.ID);
+    }
+    setPublishRequested(true);
+    setModalMessage("Publish request sent to workflow.");
+  };
+
+  const handlePublish = async (input: {
+    title: string;
+    description: string;
+    privacyStatus: "public" | "unlisted" | "private";
+  }) => {
     if (!selectedClip) {
       setModalMessage("Please select a clip to publish.");
       return;
@@ -380,29 +406,43 @@ export const useClipStudio = () => {
       return;
     }
     if (publishEntry) {
-      setModalMessage("This clip is already queued for YouTube.");
+      if (publishEntry.status === "uploaded") {
+        setConfirmPublishInput(input);
+        setModalMessage("This clip is already published. Publish it again?");
+      } else {
+        setModalMessage("This clip is still publishing. Please wait for it to finish.");
+      }
       return;
     }
     if (publishRequested) {
-      setModalMessage("Publish request already sent.");
+      setModalMessage("This clip is still publishing. Please wait for it to finish.");
       return;
     }
     setIsPublishing(true);
     try {
-      const trimmedDescription = input.description.trim();
-      await publishClip(selectedClip.id, {
-        title: input.title,
-        ...(trimmedDescription ? { description: trimmedDescription } : {}),
-        privacy_status: input.privacyStatus,
-      });
-      if (activeRecording) {
-        markPublishRequested(activeRecording.ID);
-      }
-      setPublishRequested(true);
-      setModalMessage("Publish request sent to workflow.");
+      await sendPublishRequest(input);
     } finally {
       setIsPublishing(false);
     }
+  };
+
+  const confirmPublishAgain = async () => {
+    if (!confirmPublishInput || !selectedClip) {
+      setConfirmPublishInput(null);
+      setModalMessage(null);
+      return;
+    }
+    setIsPublishing(true);
+    try {
+      await sendPublishRequest(confirmPublishInput);
+    } finally {
+      setConfirmPublishInput(null);
+      setIsPublishing(false);
+    }
+  };
+
+  const cancelConfirmPublish = () => {
+    setConfirmPublishInput(null);
   };
 
   const refreshPublishes = async () => {
@@ -418,11 +458,56 @@ export const useClipStudio = () => {
     if (!selectedClip) {
       setPublishes([]);
       setPublishRequested(false);
+      setConfirmPublishInput(null);
       return;
     }
     setPublishRequested(false);
     refreshPublishes();
   }, [selectedClip?.id]);
+
+  useEffect(() => {
+    if (!publishRequested || !selectedClip) {
+      if (publishPollRef.current) {
+        clearInterval(publishPollRef.current);
+        publishPollRef.current = null;
+      }
+      publishPollAttempts.current = 0;
+      return;
+    }
+
+    if (publishPollRef.current) {
+      return;
+    }
+
+    publishPollRef.current = setInterval(() => {
+      publishPollAttempts.current += 1;
+      refreshPublishes();
+      if (publishPollAttempts.current >= 24) {
+        clearInterval(publishPollRef.current as ReturnType<typeof setInterval>);
+        publishPollRef.current = null;
+        publishPollAttempts.current = 0;
+      }
+    }, 5000);
+    return () => {
+      if (publishPollRef.current) {
+        clearInterval(publishPollRef.current);
+        publishPollRef.current = null;
+      }
+    };
+  }, [publishRequested, selectedClip?.id]);
+
+  useEffect(() => {
+    if (!publishRequested || !selectedClip) {
+      return;
+    }
+    const uploaded = publishes.find((item) => item.status === "uploaded");
+    if (!uploaded || publishedNoticeRef.current.has(uploaded.id)) {
+      return;
+    }
+    publishedNoticeRef.current.add(uploaded.id);
+    setPublishRequested(false);
+    setModalMessage("Clip successfully published.");
+  }, [publishes, publishRequested, selectedClip?.id]);
 
   return {
     recordings,
@@ -452,6 +537,9 @@ export const useClipStudio = () => {
     publishRequested,
     modalMessage,
     setModalMessage,
+    confirmPublishInput,
+    confirmPublishAgain,
+    cancelConfirmPublish,
     hasGeneratedClip,
     isPublishReady,
     handleGenerate,

@@ -37,3 +37,10 @@ npm run dev
 ```powershell
 git rm -r --cached highlight-client/node_modules
 ```
+
+## Add these env var , n8n will not work without them
+```powershell
+$env:N8N_WEBHOOK_SECRET="2Dsqk1+HpqMXkMHjW564EP8RNmepb9UGnYpyudwHGN8="
+$env:N8N_PUBLISH_WEBHOOK_URL="http://localhost:5679/webhook/youtube/publish"
+go run .\cmd\api\main.go
+```

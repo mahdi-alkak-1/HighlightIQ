@@ -33,6 +33,9 @@ const ClipsCandidatesPage = () => {
     publishRequested,
     modalMessage,
     setModalMessage,
+    confirmPublishInput,
+    confirmPublishAgain,
+    cancelConfirmPublish,
     hasGeneratedClip,
     isPublishReady,
     handleGenerate,
@@ -77,7 +80,7 @@ const ClipsCandidatesPage = () => {
     totalCandidates === 0 ? "0 of 0" : `${pageStart + 1}-${pageEnd} of ${totalCandidates}`;
 
   const isGenerateDisabled = !selectedCandidateId || isGenerating || hasGeneratedClip;
-  const isPublishDisabled = !selectedCandidateId || !isPublishReady || publishRequested;
+  const isPublishDisabled = !selectedCandidateId || !isPublishReady;
 
   useEffect(() => {
     const player = videoRef.current;
@@ -226,7 +229,20 @@ const ClipsCandidatesPage = () => {
         <PublishConnectionBar connected={publishConnected} onToggle={setPublishConnected} />
       </div>
 
-      {modalMessage && <PublishModal message={modalMessage} onClose={() => setModalMessage(null)} />}
+      {modalMessage && (
+        <PublishModal
+          message={modalMessage}
+          onClose={() => {
+            setModalMessage(null);
+            if (confirmPublishInput) {
+              cancelConfirmPublish();
+            }
+          }}
+          onConfirm={confirmPublishInput ? confirmPublishAgain : undefined}
+          confirmLabel="Publish again"
+          cancelLabel="Cancel"
+        />
+      )}
     </DashboardLayout>
   );
 };
