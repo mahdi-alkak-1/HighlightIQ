@@ -111,12 +111,15 @@ n8n Workflow
       <img src="./readme/demo/WorkFlows.png" width="1320" alt="Workflows" />
     </td>
   </tr>
+
+</table>
+<table>
   <tr>
       <th align="center">Tests</th>
   </tr>
   <tr>
     <td align="center">
-      <img src="./readme/demo/Tests.png" width="1200" alt="Tests" />
+      <img src="./readme/demo/Tests.png" width="390" alt="Tests" />
     </td>
   </tr>
 </table>
