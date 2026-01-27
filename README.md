@@ -48,43 +48,49 @@ n8n Workflow
 ### <a href="#user-screens">User Screens</a>
 
 <table>
-  <!-- Row Group 1 -->
   <tr>
     <th align="center">Landing</th>
     <th align="center">Register</th>
-    <th align="center">Login</th>
   </tr>
   <tr>
-    <td align="center"><img src="./readme/demo/Landing.gif" width="300"></td>
-    <td align="center"><img src="./readme/demo/Register.png" width="300"></td>
-    <td align="center"><img src="./readme/demo/Signin.png" width="300"></td>
+    <td align="center"><img src="./readme/demo/Landing.gif" width="520"></td>
+    <td align="center"><img src="./readme/demo/Register.png" width="520"></td>
   </tr>
 
-  <!-- Row Group 2 -->
   <tr>
+    <th align="center">Login</th>
     <th align="center">Uploading Video</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme/demo/Signin.png" width="520"></td>
+    <td align="center"><img src="./readme/demo/Uploading_Video.gif" width="520"></td>
+  </tr>
+
+  <tr>
     <th align="center">Pipeline Kill Detection</th>
     <th align="center">Clip Candidate</th>
   </tr>
   <tr>
-    <td align="center"><img src="./readme/demo/Uploading_Video.gif" width="300"></td>
-    <td align="center"><img src="./readme/demo/Pipeline_kill_Detection.gif" width="300"></td>
-    <td align="center"><img src="./readme/demo/clipcandidates.gif" width="300"></td>
+    <td align="center"><img src="./readme/demo/Pipeline_kill_Detection.gif" width="520"></td>
+    <td align="center"><img src="./readme/demo/clipcandidates.gif" width="520"></td>
   </tr>
 
-  <!-- Row Group 3 -->
   <tr>
     <th align="center">Pipeline Review</th>
     <th align="center">Publish YouTube</th>
-    <th align="center">Clips Library</th>
   </tr>
   <tr>
-    <td align="center"><img src="./readme/demo/Pipeline_review.gif" width="300"></td>
-    <td align="center"><img src="./readme/demo/Youtube_Publish.gif" width="300"></td>
-    <td align="center"><img src="./readme/demo/ClipsLibrary.gif" width="300"></td>
+    <td align="center"><img src="./readme/demo/Pipeline_review.gif" width="520"></td>
+    <td align="center"><img src="./readme/demo/Youtube_Publish.gif" width="520"></td>
+  </tr>
+
+  <tr>
+    <th align="center" colspan="2">Clips Library</th>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="./readme/demo/ClipsLibrary.gif" width="520"></td>
   </tr>
 </table>
-
 
 <br><br>
 
@@ -100,13 +106,13 @@ n8n Workflow
   </tr>
   <tr>
     <td align="center">
-      <img src="./readme/demo/CICD.png" width="300" alt="CI/CD" />
+      <img src="./readme/demo/CICD.png" width="800" alt="CI/CD" />
     </td>
     <td align="center">
-      <img src="./readme/demo/WorkFlows.png" width="300" alt="Workflows" />
+      <img src="./readme/demo/WorkFlows.png" width="620" alt="Workflows" />
     </td>
     <td align="center">
-      <img src="./readme/demo/Tests.png" width="300" alt="Tests" />
+      <img src="./readme/demo/Tests.png" width="1000" alt="Tests" />
     </td>
   </tr>
 </table>
