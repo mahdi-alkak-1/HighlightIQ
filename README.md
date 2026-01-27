@@ -123,3 +123,25 @@ n8n Workflow
     </td>
   </tr>
 </table>
+
+
+<a id="deployment"></a>
+<img src="./readme/cards/title7.svg"/>
+### <a href="#deplotment">Postman</a>
+
+<table>
+  <tr>
+    <th align="center">Login</th>
+    <th align="center">Recordings</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme/demo/Postman-login.png" width="520"></td>
+    <td align="center"><img src="./readme/demo/Postman-recordings.png" width="540"></td>
+  </tr>
+  <tr>
+    <th align="center" colspan="2">Detecting</th>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="./readme/demo/Postman-detecting.png" width="520"></td>
+  </tr>
+</table>
