@@ -102,17 +102,21 @@ n8n Workflow
   <tr>
     <th align="center">CI/CD</th>
     <th align="center">Workflows</th>
-    <th align="center">Tests</th>
   </tr>
   <tr>
     <td align="center">
-      <img src="./readme/demo/CICD.png" width="800" alt="CI/CD" />
+      <img src="./readme/demo/CICD.png" width="1600" alt="CI/CD" />
     </td>
     <td align="center">
-      <img src="./readme/demo/WorkFlows.png" width="620" alt="Workflows" />
+      <img src="./readme/demo/WorkFlows.png" width="1320" alt="Workflows" />
     </td>
+  </tr>
+  <tr>
+      <th align="center">Tests</th>
+  </tr>
+  <tr>
     <td align="center">
-      <img src="./readme/demo/Tests.png" width="1000" alt="Tests" />
+      <img src="./readme/demo/Tests.png" width="1200" alt="Tests" />
     </td>
   </tr>
 </table>
