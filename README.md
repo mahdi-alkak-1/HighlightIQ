@@ -145,3 +145,12 @@ n8n Workflow
     <td align="center" colspan="2"><img src="./readme/demo/Postman-detecting.png" width="520"></td>
   </tr>
 </table>
+
+<br><br>
+
+<a id="license"></a>
+### <a href="#license">License</a>
+
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
