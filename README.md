@@ -53,8 +53,8 @@ n8n Workflow
     <th align="center">Register</th>
   </tr>
   <tr>
-    <td align="center"><img src="./readme/demo/Landing.gif" width="520"></td>
-    <td align="center"><img src="./readme/demo/Register.png" width="520"></td>
+    <td align="center"><img src="./readme/demo/Landing.gif" width="400"></td>
+    <td align="center"><img src="./readme/demo/Register.png" width="400"></td>
   </tr>
 
   <tr>
@@ -62,8 +62,8 @@ n8n Workflow
     <th align="center">Uploading Video</th>
   </tr>
   <tr>
-    <td align="center"><img src="./readme/demo/Signin.png" width="520"></td>
-    <td align="center"><img src="./readme/demo/Uploading_Video.gif" width="520"></td>
+    <td align="center"><img src="./readme/demo/Signin.png" width="400"></td>
+    <td align="center"><img src="./readme/demo/Uploading_Video.gif" width="400"></td>
   </tr>
 
   <tr>
@@ -71,8 +71,8 @@ n8n Workflow
     <th align="center">Clip Candidate</th>
   </tr>
   <tr>
-    <td align="center"><img src="./readme/demo/Pipeline_kill_Detection.gif" width="520"></td>
-    <td align="center"><img src="./readme/demo/clipcandidates.gif" width="520"></td>
+    <td align="center"><img src="./readme/demo/Pipeline_kill_Detection.gif" width="400"></td>
+    <td align="center"><img src="./readme/demo/clipcandidates.gif" width="400"></td>
   </tr>
 
   <tr>
@@ -80,8 +80,8 @@ n8n Workflow
     <th align="center">Publish YouTube</th>
   </tr>
   <tr>
-    <td align="center"><img src="./readme/demo/Pipeline_review.gif" width="520"></td>
-    <td align="center"><img src="./readme/demo/Youtube_Publish.gif" width="520"></td>
+    <td align="center"><img src="./readme/demo/Pipeline_review.gif" width="400"></td>
+    <td align="center"><img src="./readme/demo/Youtube_Publish.gif" width="400"></td>
   </tr>
 
   <tr>
