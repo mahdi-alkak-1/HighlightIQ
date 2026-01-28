@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getRecordings, getRecordingThumbnail, uploadRecording } from "@/services/api/recordings";
 import { RecordingApi, RecordingCreateInput } from "@/types/recordings";
 import { isApiError } from "@/types/api";
-import { markUploadStarted } from "@/utils/pipelineTimeline";
+import { clearPendingUpload, markPendingUploadStarted, markUploadStarted } from "@/utils/pipelineTimeline";
 
 export const useRecordings = () => {
   const [recordings, setRecordings] = useState<RecordingApi[]>([]);
@@ -71,11 +71,13 @@ export const useRecordings = () => {
     setIsUploading(true);
     setUploadProgress(0);
     setErrorMessage(null);
+    markPendingUploadStarted();
 
     try {
       const created = await uploadRecording(input, setUploadProgress);
       setRecordings((prev) => [created, ...prev]);
       markUploadStarted(created.ID);
+      clearPendingUpload();
       return created;
     } catch (error) {
       if (isApiError(error)) {
@@ -83,6 +85,7 @@ export const useRecordings = () => {
       } else {
         setErrorMessage("Upload failed.");
       }
+      clearPendingUpload();
       return null;
     } finally {
       setIsUploading(false);

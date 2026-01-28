@@ -7,6 +7,7 @@ export interface PipelineTimeline {
 }
 
 const STORAGE_KEY = "highlightiq_pipeline_timeline";
+const PENDING_UPLOAD_KEY = "highlightiq_pending_upload";
 
 export const readPipelineTimeline = (): PipelineTimeline | null => {
   if (typeof window === "undefined") {
@@ -36,6 +37,35 @@ export const writePipelineTimeline = (timeline: PipelineTimeline | null) => {
     return;
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(timeline));
+};
+
+export const readPendingUploadStartedAt = (): number | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const raw = localStorage.getItem(PENDING_UPLOAD_KEY);
+  if (!raw) {
+    return null;
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  return parsed;
+};
+
+export const markPendingUploadStarted = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.setItem(PENDING_UPLOAD_KEY, String(Date.now()));
+};
+
+export const clearPendingUpload = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.removeItem(PENDING_UPLOAD_KEY);
 };
 
 export const markPublishRequested = (recordingId: number) => {

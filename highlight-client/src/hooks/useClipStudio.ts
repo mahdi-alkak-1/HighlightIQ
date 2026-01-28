@@ -78,6 +78,7 @@ export const useClipStudio = () => {
   const publishPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const publishPollAttempts = useRef(0);
   const publishedNoticeRef = useRef<Set<number>>(new Set());
+  const publishInFlightRef = useRef(false);
   const [state, setState] = useState<StudioState>({
     isLoading: true,
     errorMessage: null,
@@ -376,16 +377,24 @@ export const useClipStudio = () => {
     privacyStatus: "public" | "unlisted" | "private";
   }) => {
     const trimmedDescription = input.description.trim();
-    await publishClip(selectedClip!.id, {
-      title: input.title,
-      ...(trimmedDescription ? { description: trimmedDescription } : {}),
-      privacy_status: input.privacyStatus,
-    });
+    publishInFlightRef.current = true;
     if (activeRecording) {
       markPublishRequested(activeRecording.ID);
     }
     setPublishRequested(true);
-    setModalMessage("Publish request sent to workflow.");
+    try {
+      await publishClip(selectedClip!.id, {
+        title: input.title,
+        ...(trimmedDescription ? { description: trimmedDescription } : {}),
+        privacy_status: input.privacyStatus,
+      });
+      setModalMessage("Publish request sent to workflow.");
+    } catch (error) {
+      publishInFlightRef.current = false;
+      setPublishRequested(false);
+      setModalMessage("Publish failed. Please try again.");
+      throw error;
+    }
   };
 
   const handlePublish = async (input: {
@@ -394,7 +403,7 @@ export const useClipStudio = () => {
     privacyStatus: "public" | "unlisted" | "private";
   }) => {
     if (!selectedClip) {
-      setModalMessage("Please select a clip to publish.");
+      setModalMessage("Please generate a clip to publish.");
       return;
     }
     if (!hasGeneratedClip) {
@@ -405,17 +414,17 @@ export const useClipStudio = () => {
       setModalMessage("Connect YouTube to publish this clip.");
       return;
     }
+    if (publishInFlightRef.current || isPublishing || publishRequested) {
+      setModalMessage("Please wait until clip is published.");
+      return;
+    }
     if (publishEntry) {
       if (publishEntry.status === "uploaded") {
         setConfirmPublishInput(input);
         setModalMessage("This clip is already published. Publish it again?");
       } else {
-        setModalMessage("This clip is still publishing. Please wait for it to finish.");
+        setModalMessage("Please wait until clip is published.");
       }
-      return;
-    }
-    if (publishRequested) {
-      setModalMessage("This clip is still publishing. Please wait for it to finish.");
       return;
     }
     setIsPublishing(true);
@@ -459,9 +468,11 @@ export const useClipStudio = () => {
       setPublishes([]);
       setPublishRequested(false);
       setConfirmPublishInput(null);
+      publishInFlightRef.current = false;
       return;
     }
     setPublishRequested(false);
+    publishInFlightRef.current = false;
     refreshPublishes();
   }, [selectedClip?.id]);
 
@@ -506,6 +517,7 @@ export const useClipStudio = () => {
     }
     publishedNoticeRef.current.add(uploaded.id);
     setPublishRequested(false);
+    publishInFlightRef.current = false;
     setModalMessage("Clip successfully published.");
   }, [publishes, publishRequested, selectedClip?.id]);
 
