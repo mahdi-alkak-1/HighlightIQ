@@ -394,7 +394,7 @@ export const useClipStudio = () => {
     privacyStatus: "public" | "unlisted" | "private";
   }) => {
     if (!selectedClip) {
-      setModalMessage("Please select a clip to publish.");
+      setModalMessage("Please generate a clip to publish.");
       return;
     }
     if (!hasGeneratedClip) {
