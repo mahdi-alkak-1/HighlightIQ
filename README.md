@@ -17,7 +17,7 @@ HighlightIQ is a platform that turns long gameplay recordings into short, sharea
 <br>
 
 Database
-<img src="./readme/assets/database.png"/>
+<img src="./readme/assets/database.svg"/>
 
 <br>
 
@@ -39,7 +39,10 @@ n8n Workflow
 - Libraries: recordings and clips with filters, pagination, and performance stats.
 <br>
 
-<img src="./readme/assets/Features.png"/>
+<p align="center">
+  <img src="./readme/assets/pipeline.gif" alt="HighlightIQ pipeline overview" width="100%" />
+</p>
+
 
 <br><br>
 
@@ -108,7 +111,7 @@ n8n Workflow
       <img src="./readme/demo/CICD.png" width="1600" alt="CI/CD" />
     </td>
     <td align="center">
-      <img src="./readme/demo/WorkFlows.png" width="1320" alt="Workflows" />
+      <img src="./readme/demo/WorkFlows.png" width="1380" alt="Workflows" />
     </td>
   </tr>
 
