@@ -242,11 +242,6 @@ const updateTimeline = ({
     next.publishCompletedAt = resolvePublishCompletedAt(latestPublish);
   }
 
-  const resetReady = next.publishCompletedAt && Date.now() >= next.publishCompletedAt + 15000;
-  if (resetReady && !detectionRunning) {
-    next = { recordingId };
-  }
-
   if (
     next.uploadStartedAt &&
     !next.detectionCompletedAt &&
@@ -281,7 +276,7 @@ const isPublished = (publish: YoutubePublishApi | null) => {
   if (!publish) {
     return false;
   }
-  return publish.status === "published";
+  return publish.status === "published" || publish.status === "uploaded";
 };
 
 const resolvePublishCompletedAt = (publish: YoutubePublishApi | null) => {
@@ -328,7 +323,7 @@ const buildStages = ({
   const publishActive = Boolean(publishRequestedAt) && !published;
   const publishComplete = Boolean(publishCompletedAt);
 
-  const syncEnd = publishCompletedAt ? publishCompletedAt + 10000 : null;
+  const syncEnd = publishCompletedAt ? publishCompletedAt + 5000 : null;
   const syncActive = publishCompletedAt !== undefined && syncEnd !== null && now < syncEnd;
   const syncComplete = syncEnd !== null && now >= syncEnd;
 
