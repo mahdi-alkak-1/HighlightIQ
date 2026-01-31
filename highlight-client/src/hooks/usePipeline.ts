@@ -56,6 +56,7 @@ export const usePipeline = () => {
         const latest = recordings
           .slice()
           .sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime())[0];
+        const latestCreatedAt = latest ? new Date(latest.CreatedAt).getTime() : null;
 
         const pendingUploadAt = readPendingUploadStartedAt();
         const pendingUploadActive =
@@ -96,16 +97,16 @@ export const usePipeline = () => {
         );
 
         const storedTimeline = readPipelineTimeline();
-        const latestCreatedAt = new Date(latest.CreatedAt).getTime();
+        const latestCreatedAtMs = new Date(latest.CreatedAt).getTime();
         const hasActiveRecording =
           latest.Status === "uploaded" || latest.Status === "processing" || latest.Status === "used";
         const sameRecording = storedTimeline?.recordingId === latest.ID;
         let seedTimeline = sameRecording ? storedTimeline : null;
 
         if (hasActiveRecording && !seedTimeline) {
-          seedTimeline = { recordingId: latest.ID, uploadStartedAt: latestCreatedAt };
+          seedTimeline = { recordingId: latest.ID, uploadStartedAt: latestCreatedAtMs };
         } else if (hasActiveRecording && seedTimeline && !seedTimeline.uploadStartedAt) {
-          seedTimeline = { ...seedTimeline, uploadStartedAt: latestCreatedAt };
+          seedTimeline = { ...seedTimeline, uploadStartedAt: latestCreatedAtMs };
         }
 
         if (seedTimeline) {
