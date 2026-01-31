@@ -25,7 +25,7 @@ func New(webhookURL string, webhookSecret string) *Client {
     webhookURL: webhookURL,
     webhookSecret: strings.TrimSpace(webhookSecret),
     http: &http.Client{
-      Timeout: 30 * time.Second,
+      Timeout: 30 * time.Minute,
     },
   }
 }

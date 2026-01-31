@@ -9,7 +9,7 @@ import { RecordingApi } from "@/types/recordings";
 import { YoutubePublishApi } from "@/types/youtubePublishes";
 import { isApiError } from "@/types/api";
 import { clamp, formatSeconds } from "@/utils/time";
-import { markPublishRequested } from "@/utils/pipelineTimeline";
+import { clearPublishRequested, markPublishRequested, readPipelineTimeline } from "@/utils/pipelineTimeline";
 import { maxClipDurationSeconds } from "@/data/clipStudioData";
 
 interface CandidateView {
@@ -392,6 +392,9 @@ export const useClipStudio = () => {
     } catch (error) {
       publishInFlightRef.current = false;
       setPublishRequested(false);
+      if (activeRecording) {
+        clearPublishRequested(activeRecording.ID);
+      }
       setModalMessage("Publish failed. Please try again.");
       throw error;
     }
@@ -471,10 +474,15 @@ export const useClipStudio = () => {
       publishInFlightRef.current = false;
       return;
     }
-    setPublishRequested(false);
+    const storedTimeline = readPipelineTimeline();
+    const shouldResumePublish =
+      Boolean(activeRecording) &&
+      storedTimeline?.recordingId === activeRecording!.ID &&
+      Boolean(storedTimeline.publishRequestedAt);
+    setPublishRequested(shouldResumePublish);
     publishInFlightRef.current = false;
     refreshPublishes();
-  }, [selectedClip?.id]);
+  }, [selectedClip?.id, activeRecording?.ID]);
 
   useEffect(() => {
     if (!publishRequested || !selectedClip) {
