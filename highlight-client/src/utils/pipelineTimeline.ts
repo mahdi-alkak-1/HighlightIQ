@@ -80,6 +80,21 @@ export const markPublishRequested = (recordingId: number) => {
   writePipelineTimeline(next);
 };
 
+export const clearPublishRequested = (recordingId: number) => {
+  const current = readPipelineTimeline();
+  if (!current || current.recordingId !== recordingId) {
+    return;
+  }
+  const next: PipelineTimeline = {
+    recordingId,
+    uploadStartedAt: current.uploadStartedAt,
+    detectionCompletedAt: current.detectionCompletedAt,
+    publishRequestedAt: undefined,
+    publishCompletedAt: current.publishCompletedAt,
+  };
+  writePipelineTimeline(next);
+};
+
 export const markUploadStarted = (recordingId: number) => {
   const current = readPipelineTimeline();
   const next: PipelineTimeline = {

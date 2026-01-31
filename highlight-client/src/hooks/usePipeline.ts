@@ -25,6 +25,7 @@ export const usePipeline = () => {
   const [tick, setTick] = useState(Date.now());
   const detectionWasRunning = useRef(false);
   const initialLoad = useRef(true);
+  const errorDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -32,6 +33,10 @@ export const usePipeline = () => {
     const load = async () => {
       if (initialLoad.current) {
         setIsLoading(true);
+      }
+      if (errorDelayRef.current) {
+        clearTimeout(errorDelayRef.current);
+        errorDelayRef.current = null;
       }
       setErrorMessage(null);
 
@@ -51,11 +56,11 @@ export const usePipeline = () => {
         const latest = recordings
           .slice()
           .sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime())[0];
+        const latestCreatedAt = latest ? new Date(latest.CreatedAt).getTime() : null;
 
         const pendingUploadAt = readPendingUploadStartedAt();
         const pendingUploadActive =
           pendingUploadAt !== null && Date.now() - pendingUploadAt < 15 * 60 * 1000;
-        const latestCreatedAt = latest ? new Date(latest.CreatedAt).getTime() : null;
         const pendingBeforeRecording =
           pendingUploadActive && (latestCreatedAt === null || latestCreatedAt < pendingUploadAt);
 
@@ -92,18 +97,24 @@ export const usePipeline = () => {
         );
 
         const storedTimeline = readPipelineTimeline();
-        let seedTimeline = storedTimeline;
-        if (!seedTimeline) {
-          const createdAt = new Date(latest.CreatedAt).getTime();
-          const isRecent = Date.now() - createdAt < 10 * 60 * 1000;
-          if (isRecent && (latest.Status === "uploaded" || latest.Status === "processing" || latest.Status === "used")) {
-            seedTimeline = { recordingId: latest.ID, uploadStartedAt: createdAt };
-            writePipelineTimeline(seedTimeline);
-          }
+        const latestCreatedAtMs = new Date(latest.CreatedAt).getTime();
+        const hasActiveRecording =
+          latest.Status === "uploaded" || latest.Status === "processing" || latest.Status === "used";
+        const sameRecording = storedTimeline?.recordingId === latest.ID;
+        let seedTimeline = sameRecording ? storedTimeline : null;
+
+        if (hasActiveRecording && !seedTimeline) {
+          seedTimeline = { recordingId: latest.ID, uploadStartedAt: latestCreatedAtMs };
+        } else if (hasActiveRecording && seedTimeline && !seedTimeline.uploadStartedAt) {
+          seedTimeline = { ...seedTimeline, uploadStartedAt: latestCreatedAtMs };
         }
-        if (storedTimeline && storedTimeline.recordingId === latest.ID) {
-          setTimeline(storedTimeline);
+
+        if (seedTimeline) {
+          writePipelineTimeline(seedTimeline);
+        } else {
+          writePipelineTimeline(null);
         }
+        setTimeline(seedTimeline);
 
         const nextTimeline = updateTimeline({
           latestRecording: latest,
@@ -125,10 +136,26 @@ export const usePipeline = () => {
         );
       } catch (error) {
         if (isMounted) {
-          if (isApiError(error)) {
-            setErrorMessage(error.data?.message ?? "Unable to load pipeline.");
+          const pendingUploadAt = readPendingUploadStartedAt();
+          const pendingUploadActive =
+            pendingUploadAt !== null && Date.now() - pendingUploadAt < 15 * 60 * 1000;
+          if (pendingUploadActive) {
+            setStages(buildUploadingStages());
+            setErrorMessage(null);
+            return;
+          }
+          const nextMessage = isApiError(error)
+            ? error.data?.message ?? "Unable to load pipeline."
+            : "Unable to load pipeline.";
+          if (initialLoad.current) {
+            errorDelayRef.current = setTimeout(() => {
+              if (isMounted) {
+                setErrorMessage(nextMessage);
+              }
+              errorDelayRef.current = null;
+            }, 1500);
           } else {
-            setErrorMessage("Unable to load pipeline.");
+            setErrorMessage(nextMessage);
           }
         }
       } finally {
@@ -145,6 +172,10 @@ export const usePipeline = () => {
 
     return () => {
       isMounted = false;
+      if (errorDelayRef.current) {
+        clearTimeout(errorDelayRef.current);
+        errorDelayRef.current = null;
+      }
     };
   }, [tick]);
 
@@ -306,13 +337,9 @@ const buildStages = ({
 
   const detectionRunning = latestRecording.Status === "processing";
   const detectionCompletedAt = timeline?.detectionCompletedAt;
-  const detectionWindowEnd = detectionCompletedAt ? detectionCompletedAt + 10000 : null;
-  const reviewWindowEnd = detectionCompletedAt ? detectionCompletedAt + 20000 : null;
+  const detectionWindowEnd = detectionCompletedAt ?? null;
 
-  const reviewActive =
-    detectionCompletedAt !== undefined &&
-    detectionWindowEnd !== null &&
-    now >= detectionWindowEnd;
+  const reviewActive = detectionCompletedAt !== undefined;
   const reviewComplete = false;
 
   const publishRequestedAt = timeline?.publishRequestedAt;
